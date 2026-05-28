@@ -46,7 +46,10 @@ function Scanner() {
 
   const onScanSuccess = async (decodedText) => {
     try {
-      await stopScanner()
+      // Pause scanning temporarily to prevent multiple scans
+      if (html5QrCodeRef.current) {
+        await html5QrCodeRef.current.pause()
+      }
       
       // Parse QR code data
       const guestData = JSON.parse(decodedText)
@@ -71,15 +74,23 @@ function Scanner() {
         alamat: alamat_tamu
       })
 
-      // Auto close after 5 seconds
+      // Auto close and resume scanning after 5 seconds
       setTimeout(() => {
         setWelcomeData(null)
+        // Resume scanning after popup closes
+        if (html5QrCodeRef.current && scanning) {
+          html5QrCodeRef.current.resume()
+        }
       }, 5000)
     } catch (err) {
       console.error("Error processing QR code:", err)
       setError("QR code tidak valid atau terjadi kesalahan")
       setTimeout(() => {
         setError(null)
+        // Resume scanning after error
+        if (html5QrCodeRef.current && scanning) {
+          html5QrCodeRef.current.resume()
+        }
       }, 3000)
     }
   }
@@ -149,7 +160,13 @@ function Scanner() {
 
       {/* Welcome Modal */}
       {welcomeData && (
-        <div className="modal-overlay" onClick={() => setWelcomeData(null)}>
+        <div className="modal-overlay" onClick={() => {
+          setWelcomeData(null)
+          // Resume scanning when modal closed
+          if (html5QrCodeRef.current && scanning) {
+            html5QrCodeRef.current.resume()
+          }
+        }}>
           <div className="modal-content" onClick={(e) => e.stopPropagation()} style={{ textAlign: 'center' }}>
             <div style={{ fontSize: '4rem', marginBottom: '1rem' }}>🎉</div>
             <h2 style={{ fontSize: '2rem', fontWeight: '700', color: '#667eea', marginBottom: '0.5rem' }}>
@@ -174,7 +191,13 @@ function Scanner() {
             </div>
             <button 
               className="btn-secondary" 
-              onClick={() => setWelcomeData(null)}
+              onClick={() => {
+                setWelcomeData(null)
+                // Resume scanning when button clicked
+                if (html5QrCodeRef.current && scanning) {
+                  html5QrCodeRef.current.resume()
+                }
+              }}
               style={{ marginTop: '1rem' }}
             >
               Tutup
