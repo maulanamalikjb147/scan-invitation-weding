@@ -9,12 +9,19 @@ export default defineConfig({
     port: 3000
   },
   define: {
-    'global': 'globalThis',
-    'process.env': {}
+    'global': 'globalThis'
   },
   resolve: {
     alias: {
       buffer: 'buffer'
+    }
+  },
+  optimizeDeps: {
+    include: ['buffer'],
+    esbuildOptions: {
+      define: {
+        global: 'globalThis'
+      }
     }
   }
 })

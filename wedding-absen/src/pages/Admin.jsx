@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { supabase } from '../supabaseClient'
 import QRCode from 'qrcode'
 import { S3Client, PutObjectCommand } from '@aws-sdk/client-s3'
+import { Buffer } from 'buffer'
 
 function Admin() {
   const [isLoggedIn, setIsLoggedIn] = useState(false)
