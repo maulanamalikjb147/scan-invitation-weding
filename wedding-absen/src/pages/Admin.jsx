@@ -2,11 +2,9 @@ import { useState, useEffect } from 'react'
 import { supabase } from '../supabaseClient'
 import QRCode from 'qrcode'
 import { S3Client, PutObjectCommand } from '@aws-sdk/client-s3'
+import { Buffer } from 'buffer'
 
 function Admin() {
-  const [isLoggedIn, setIsLoggedIn] = useState(false)
-  const [username, setUsername] = useState('')
-  const [password, setPassword] = useState('')
   const [guests, setGuests] = useState([])
   const [showAddModal, setShowAddModal] = useState(false)
   const [newGuest, setNewGuest] = useState({ nama_tamu: '', alamat_tamu: '' })
@@ -27,23 +25,8 @@ function Admin() {
   })
 
   useEffect(() => {
-    if (isLoggedIn) {
-      fetchGuests()
-    }
-  }, [isLoggedIn])
-
-  const handleLogin = (e) => {
-    e.preventDefault()
-    const adminUsername = import.meta.env.VITE_ADMIN_USERNAME
-    const adminPassword = import.meta.env.VITE_ADMIN_PASSWORD
-
-    if (username === adminUsername && password === adminPassword) {
-      setIsLoggedIn(true)
-      setError(null)
-    } else {
-      setError('Username atau password salah!')
-    }
-  }
+    fetchGuests()
+  }, [])
 
   const fetchGuests = async () => {
     setLoading(true)
@@ -211,54 +194,6 @@ function Admin() {
     })
   }
 
-  if (!isLoggedIn) {
-    return (
-      <div className="app-container" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '100vh', padding: '1rem' }}>
-        <div className="card" style={{ maxWidth: '450px', width: '100%' }}>
-          <h1 style={{ fontSize: '2rem', fontWeight: '800', textAlign: 'center', background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', marginBottom: '2rem' }}>
-            🔐 Admin Login
-          </h1>
-          
-          <form onSubmit={handleLogin}>
-            <div style={{ marginBottom: '1.5rem' }}>
-              <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: '600', color: '#333' }}>Username</label>
-              <input
-                type="text"
-                className="input-field"
-                value={username}
-                onChange={(e) => setUsername(e.target.value)}
-                placeholder="Masukkan username"
-                required
-              />
-            </div>
-            
-            <div style={{ marginBottom: '1.5rem' }}>
-              <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: '600', color: '#333' }}>Password</label>
-              <input
-                type="password"
-                className="input-field"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                placeholder="Masukkan password"
-                required
-              />
-            </div>
-
-            {error && (
-              <div style={{ background: '#ffe5e5', color: '#ff4757', padding: '0.75rem', borderRadius: '8px', marginBottom: '1rem', fontSize: '0.9rem' }}>
-                {error}
-              </div>
-            )}
-
-            <button type="submit" className="btn-primary" style={{ width: '100%', padding: '1rem' }}>
-              Login
-            </button>
-          </form>
-        </div>
-      </div>
-    )
-  }
-
   return (
     <div className="app-container" style={{ minHeight: '100vh', padding: '2rem' }}>
       <div style={{ maxWidth: '1400px', margin: '0 auto' }}>
@@ -267,13 +202,6 @@ function Admin() {
           <h1 style={{ fontSize: '2.5rem', fontWeight: '800', color: 'white', margin: 0 }}>
             👥 Admin Dashboard
           </h1>
-          <button 
-            className="btn-secondary" 
-            onClick={() => setIsLoggedIn(false)}
-            style={{ background: 'white' }}
-          >
-            Logout
-          </button>
         </div>
 
         {/* Action Buttons */}
