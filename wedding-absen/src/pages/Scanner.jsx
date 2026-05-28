@@ -17,10 +17,26 @@ function Scanner() {
       html5QrCodeRef.current = new Html5Qrcode("qr-reader")
       
       await html5QrCodeRef.current.start(
-        { facingMode: "environment" },
+        { 
+          facingMode: "environment",
+          aspectRatio: 1.0
+        },
         {
-          fps: 10,
-          qrbox: { width: 250, height: 250 }
+          fps: 30,  // 3x lebih cepat dari sebelumnya (10 fps)
+          qrbox: function(viewfinderWidth, viewfinderHeight) {
+            // Dynamic qrbox size based on screen
+            let minEdge = Math.min(viewfinderWidth, viewfinderHeight);
+            let qrboxSize = Math.floor(minEdge * 0.8);  // 80% of viewport
+            return {
+              width: qrboxSize,
+              height: qrboxSize
+            };
+          },
+          aspectRatio: 1.0,
+          disableFlip: false,  // Allow flipped QR codes
+          videoConstraints: {
+            advanced: [{ zoom: 1.0 }]
+          }
         },
         onScanSuccess,
         onScanError
@@ -121,8 +137,24 @@ function Scanner() {
           borderRadius: '16px', 
           overflow: 'hidden', 
           marginBottom: '1rem',
-          display: scanning ? 'block' : 'none'
+          display: scanning ? 'block' : 'none',
+          boxShadow: scanning ? '0 0 20px rgba(102, 126, 234, 0.3)' : 'none',
+          border: scanning ? '3px solid #667eea' : 'none'
         }}></div>
+
+        {scanning && (
+          <div style={{
+            background: 'rgba(102, 126, 234, 0.1)',
+            padding: '0.75rem',
+            borderRadius: '12px',
+            marginBottom: '1rem',
+            color: '#667eea',
+            fontWeight: '600',
+            fontSize: '0.95rem'
+          }}>
+            📸 Arahkan kamera ke QR code...
+          </div>
+        )}
 
         {!scanning && !welcomeData && (
           <button 
@@ -140,7 +172,7 @@ function Scanner() {
             onClick={stopScanner}
             style={{ width: '100%', padding: '1rem' }}
           >
-            ❌ Batal
+            ❌ Berhenti Scan
           </button>
         )}
 
