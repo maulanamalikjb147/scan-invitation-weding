@@ -6,29 +6,24 @@
 - **Scanner (Check-in)**: http://localhost:3000/
 - **Admin Panel**: http://localhost:3000/admin
 
----
-
-## 🔐 Login Admin
-
-**URL**: http://localhost:3000/admin
-
-**Credentials**:
-- Username: `admin`
-- Password: `@R00tsys147`
+⚠️ **Note**: Admin panel TIDAK memerlukan login. Langsung bisa diakses!
 
 ---
 
 ## 📋 Cara Pakai - Admin
 
-### 1. Tambah Tamu
-1. Login ke admin panel
-2. Klik tombol **"➕ Tambah Tamu"**
-3. Isi form:
+### 1. Akses Admin Panel
+1. Buka: http://localhost:3000/admin
+2. **Tidak perlu login!** Langsung ke dashboard
+
+### 2. Tambah Tamu
+1. Klik tombol **"➕ Tambah Tamu"**
+2. Isi form:
    - Nama Tamu
    - Alamat
-4. Klik **"Simpan"**
+3. Klik **"Simpan"**
 
-### 2. Generate QR Code
+### 3. Generate QR Code
 
 **Option A: Generate Satu Per Satu**
 1. Cari tamu di table
@@ -41,18 +36,18 @@
 2. Tunggu proses selesai
 3. Semua QR akan muncul di table
 
-### 3. Download QR Code
+### 4. Download QR Code
 1. Klik pada gambar QR code di table
 2. Klik kanan → "Save Image As"
 3. Atau screenshot langsung
 4. Share QR ke tamu via WA/Email
 
-### 4. Hapus Tamu
+### 5. Hapus Tamu
 1. Klik tombol **🗑️** di kolom "Actions"
 2. Konfirmasi penghapusan
 3. Tamu akan dihapus dari database
 
-### 5. Refresh Data
+### 6. Refresh Data
 1. Klik tombol **"🔄 Refresh Data"**
 2. Data akan dimuat ulang dari database
 
@@ -90,6 +85,7 @@
 - Print QR dalam ukuran yang cukup besar (min 5x5 cm)
 - Test scan QR sebelum distribute ke tamu
 - Backup database secara berkala
+- **Jaga kerahasiaan URL admin** karena tidak ada password
 
 ### Untuk Tamu
 - Pastikan QR code dalam kondisi bagus (tidak rusak/blur)
@@ -187,6 +183,13 @@ tail -f /var/log/supervisor/wedding-app.err.log
 - Check network tab di browser
 - Verify Supabase service status
 
+### Masalah: Page blank/error "supabaseUrl is required"
+**Solusi**:
+- Pastikan file `.env` ada di root folder
+- Copy dari `.env.example`: `cp .env.example .env`
+- Restart development server
+- Hard refresh browser (Ctrl+Shift+R)
+
 ---
 
 ## 📞 Need Help?
@@ -209,8 +212,8 @@ sudo supervisorctl restart wedding-app
 
 ## ✅ Checklist Sebelum Event
 
-- [ ] Test admin login
-- [ ] Add beberapa tamu test
+- [ ] Setup file .env dengan credentials yang benar
+- [ ] Test admin panel (tambah tamu)
 - [ ] Generate QR codes
 - [ ] Test scan dengan QR code
 - [ ] Verify database updates
@@ -219,6 +222,17 @@ sudo supervisorctl restart wedding-app
 - [ ] Backup database
 - [ ] Siapkan device untuk scanning
 - [ ] Brief team tentang cara pakai
+
+---
+
+## 🔒 Security Notes
+
+⚠️ **PENTING**: 
+- Admin panel **TIDAK** memerlukan login
+- **Jaga kerahasiaan URL admin panel** (/admin)
+- Jangan share URL admin ke public
+- Hanya gunakan di jaringan private/trusted
+- Untuk production dengan akses public, sebaiknya tambahkan authentication
 
 ---
 
@@ -231,7 +245,5 @@ Aplikasi sudah siap digunakan untuk event pernikahan Anda!
 ---
 
 **Quick Access**:
-- Admin: http://localhost:3000/admin
+- Admin: http://localhost:3000/admin (NO LOGIN REQUIRED)
 - Scanner: http://localhost:3000/
-- Username: admin
-- Password: @R00tsys147
