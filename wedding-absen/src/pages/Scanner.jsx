@@ -17,10 +17,26 @@ function Scanner() {
       html5QrCodeRef.current = new Html5Qrcode("qr-reader")
       
       await html5QrCodeRef.current.start(
-        { facingMode: "environment" },
+        { 
+          facingMode: "environment",
+          aspectRatio: 1.0
+        },
         {
-          fps: 10,
-          qrbox: { width: 250, height: 250 }
+          fps: 30,  // 3x lebih cepat dari sebelumnya (10 fps)
+          qrbox: function(viewfinderWidth, viewfinderHeight) {
+            // Dynamic qrbox size based on screen
+            let minEdge = Math.min(viewfinderWidth, viewfinderHeight);
+            let qrboxSize = Math.floor(minEdge * 0.8);  // 80% of viewport
+            return {
+              width: qrboxSize,
+              height: qrboxSize
+            };
+          },
+          aspectRatio: 1.0,
+          disableFlip: false,  // Allow flipped QR codes
+          videoConstraints: {
+            advanced: [{ zoom: 1.0 }]
+          }
         },
         onScanSuccess,
         onScanError
@@ -46,7 +62,10 @@ function Scanner() {
 
   const onScanSuccess = async (decodedText) => {
     try {
-      await stopScanner()
+      // Pause scanning temporarily to prevent multiple scans
+      if (html5QrCodeRef.current) {
+        await html5QrCodeRef.current.pause()
+      }
       
       // Parse QR code data
       const guestData = JSON.parse(decodedText)
@@ -71,15 +90,23 @@ function Scanner() {
         alamat: alamat_tamu
       })
 
-      // Auto close after 5 seconds
+      // Auto close and resume scanning after 5 seconds
       setTimeout(() => {
         setWelcomeData(null)
+        // Resume scanning after popup closes
+        if (html5QrCodeRef.current && scanning) {
+          html5QrCodeRef.current.resume()
+        }
       }, 5000)
     } catch (err) {
       console.error("Error processing QR code:", err)
       setError("QR code tidak valid atau terjadi kesalahan")
       setTimeout(() => {
         setError(null)
+        // Resume scanning after error
+        if (html5QrCodeRef.current && scanning) {
+          html5QrCodeRef.current.resume()
+        }
       }, 3000)
     }
   }
@@ -106,30 +133,47 @@ function Scanner() {
           Scan QR code untuk check-in
         </p>
 
-        {!scanning && !welcomeData && (
-          <div>
-            <div id="qr-reader" style={{ display: 'none' }}></div>
-            <button 
-              className="btn-primary" 
-              onClick={startScanner}
-              style={{ width: '100%', padding: '1.25rem', fontSize: '1.1rem', marginTop: '1rem' }}
-            >
-              🎥 Mulai Scan QR Code
-            </button>
+        <div id="qr-reader" style={{ 
+          borderRadius: '16px', 
+          overflow: 'hidden', 
+          marginBottom: '1rem',
+          display: scanning ? 'block' : 'none',
+          boxShadow: scanning ? '0 0 20px rgba(102, 126, 234, 0.3)' : 'none',
+          border: scanning ? '3px solid #667eea' : 'none'
+        }}></div>
+
+        {scanning && (
+          <div style={{
+            background: 'rgba(102, 126, 234, 0.1)',
+            padding: '0.75rem',
+            borderRadius: '12px',
+            marginBottom: '1rem',
+            color: '#667eea',
+            fontWeight: '600',
+            fontSize: '0.95rem'
+          }}>
+            📸 Arahkan kamera ke QR code...
           </div>
         )}
 
+        {!scanning && !welcomeData && (
+          <button 
+            className="btn-primary" 
+            onClick={startScanner}
+            style={{ width: '100%', padding: '1.25rem', fontSize: '1.1rem', marginTop: '1rem' }}
+          >
+            🎥 Mulai Scan QR Code
+          </button>
+        )}
+
         {scanning && (
-          <div>
-            <div id="qr-reader" style={{ borderRadius: '16px', overflow: 'hidden', marginBottom: '1rem' }}></div>
-            <button 
-              className="btn-secondary" 
-              onClick={stopScanner}
-              style={{ width: '100%', padding: '1rem' }}
-            >
-              ❌ Batal
-            </button>
-          </div>
+          <button 
+            className="btn-secondary" 
+            onClick={stopScanner}
+            style={{ width: '100%', padding: '1rem' }}
+          >
+            ❌ Berhenti Scan
+          </button>
         )}
 
         {error && (
@@ -148,7 +192,13 @@ function Scanner() {
 
       {/* Welcome Modal */}
       {welcomeData && (
-        <div className="modal-overlay" onClick={() => setWelcomeData(null)}>
+        <div className="modal-overlay" onClick={() => {
+          setWelcomeData(null)
+          // Resume scanning when modal closed
+          if (html5QrCodeRef.current && scanning) {
+            html5QrCodeRef.current.resume()
+          }
+        }}>
           <div className="modal-content" onClick={(e) => e.stopPropagation()} style={{ textAlign: 'center' }}>
             <div style={{ fontSize: '4rem', marginBottom: '1rem' }}>🎉</div>
             <h2 style={{ fontSize: '2rem', fontWeight: '700', color: '#667eea', marginBottom: '0.5rem' }}>
@@ -173,7 +223,13 @@ function Scanner() {
             </div>
             <button 
               className="btn-secondary" 
-              onClick={() => setWelcomeData(null)}
+              onClick={() => {
+                setWelcomeData(null)
+                // Resume scanning when button clicked
+                if (html5QrCodeRef.current && scanning) {
+                  html5QrCodeRef.current.resume()
+                }
+              }}
               style={{ marginTop: '1rem' }}
             >
               Tutup
