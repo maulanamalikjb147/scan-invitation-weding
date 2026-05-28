@@ -106,30 +106,31 @@ function Scanner() {
           Scan QR code untuk check-in
         </p>
 
+        <div id="qr-reader" style={{ 
+          borderRadius: '16px', 
+          overflow: 'hidden', 
+          marginBottom: '1rem',
+          display: scanning ? 'block' : 'none'
+        }}></div>
+
         {!scanning && !welcomeData && (
-          <div>
-            <div id="qr-reader" style={{ display: 'none' }}></div>
-            <button 
-              className="btn-primary" 
-              onClick={startScanner}
-              style={{ width: '100%', padding: '1.25rem', fontSize: '1.1rem', marginTop: '1rem' }}
-            >
-              🎥 Mulai Scan QR Code
-            </button>
-          </div>
+          <button 
+            className="btn-primary" 
+            onClick={startScanner}
+            style={{ width: '100%', padding: '1.25rem', fontSize: '1.1rem', marginTop: '1rem' }}
+          >
+            🎥 Mulai Scan QR Code
+          </button>
         )}
 
         {scanning && (
-          <div>
-            <div id="qr-reader" style={{ borderRadius: '16px', overflow: 'hidden', marginBottom: '1rem' }}></div>
-            <button 
-              className="btn-secondary" 
-              onClick={stopScanner}
-              style={{ width: '100%', padding: '1rem' }}
-            >
-              ❌ Batal
-            </button>
-          </div>
+          <button 
+            className="btn-secondary" 
+            onClick={stopScanner}
+            style={{ width: '100%', padding: '1rem' }}
+          >
+            ❌ Batal
+          </button>
         )}
 
         {error && (
