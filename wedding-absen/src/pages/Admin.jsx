@@ -73,7 +73,7 @@ function Admin() {
       // Upload to Supabase S3 bucket
       const fileName = `wedding-scan/${guest.id}.png`
       const command = new PutObjectCommand({
-        Bucket: 'devaq',
+        Bucket: 'assets-devaq',
         Key: fileName,
         Body: buffer,
         ContentType: 'image/png',
@@ -180,7 +180,7 @@ function Admin() {
 
   const getQRCodeUrl = (id, isGenerated) => {
     if (!isGenerated) return null
-    return `https://nemuftsdmjzkzcygkjpg.supabase.co/storage/v1/object/public/devaq/wedding-scan/${id}.png`
+    return `https://nemuftsdmjzkzcygkjpg.supabase.co/storage/v1/object/public/assets-devaq/wedding-scan/${id}.png`
   }
 
   const formatDate = (dateString) => {
