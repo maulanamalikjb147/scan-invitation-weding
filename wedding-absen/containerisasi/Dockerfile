@@ -26,9 +26,8 @@ COPY containerisasi/nginx.conf /etc/nginx/conf.d/default.conf
 # Copy built assets from builder stage
 COPY --from=build /app/dist /usr/share/nginx/html
 
-# Copy env.sh script and make it executable
-COPY containerisasi/env.sh /env.sh
-RUN chmod +x /env.sh
+# Copy env.sh script with executable permissions
+COPY --chmod=755 containerisasi/env.sh /env.sh
 
 EXPOSE 80
 
