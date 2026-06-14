@@ -13,6 +13,35 @@ function Admin() {
   const [success, setSuccess] = useState(null)
   const [generating, setGenerating] = useState(false)
 
+  // Authentication states
+  const [isLoggedIn, setIsLoggedIn] = useState(() => {
+    return sessionStorage.getItem('isAdminLoggedIn') === 'true'
+  })
+  const [usernameInput, setUsernameInput] = useState('')
+  const [passwordInput, setPasswordInput] = useState('')
+  const [loginError, setLoginError] = useState(null)
+
+  const handleLogin = (e) => {
+    e.preventDefault()
+    const configUsername = window.env?.VITE_ADMIN_USERNAME || import.meta.env.VITE_ADMIN_USERNAME
+    const configPassword = window.env?.VITE_ADMIN_PASSWORD || import.meta.env.VITE_ADMIN_PASSWORD
+
+    if (usernameInput === configUsername && passwordInput === configPassword) {
+      setIsLoggedIn(true)
+      sessionStorage.setItem('isAdminLoggedIn', 'true')
+      setLoginError(null)
+    } else {
+      setLoginError('Username atau password salah!')
+    }
+  }
+
+  const handleLogout = () => {
+    setIsLoggedIn(false)
+    sessionStorage.removeItem('isAdminLoggedIn')
+    setUsernameInput('')
+    setPasswordInput('')
+  }
+
   // Initialize S3 client
   const s3Client = new S3Client({
     endpoint: window.env?.VITE_SUPABASE_STORAGE_ENDPOINT || import.meta.env.VITE_SUPABASE_STORAGE_ENDPOINT,
@@ -194,6 +223,54 @@ function Admin() {
     })
   }
 
+  if (!isLoggedIn) {
+    return (
+      <div className="app-container" style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1rem' }}>
+        <div className="card" style={{ maxWidth: '400px', width: '100%', padding: '2.5rem', boxShadow: '0 8px 32px 0 rgba(31, 38, 135, 0.37)' }}>
+          <h2 style={{ fontSize: '2rem', fontWeight: '800', marginBottom: '1.5rem', color: 'white', textAlign: 'center' }}>
+            🔑 Admin Login
+          </h2>
+          {loginError && (
+            <div style={{ background: '#ffe5e5', color: '#ff4757', padding: '0.75rem', borderRadius: '8px', marginBottom: '1.5rem', fontWeight: '600', fontSize: '0.9rem', textAlign: 'center' }}>
+              ❌ {loginError}
+            </div>
+          )}
+          <form onSubmit={handleLogin}>
+            <div style={{ marginBottom: '1.25rem' }}>
+              <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: '600', color: 'rgba(255,255,255,0.8)' }}>
+                Username
+              </label>
+              <input
+                type="text"
+                className="input-field"
+                value={usernameInput}
+                onChange={(e) => setUsernameInput(e.target.value)}
+                placeholder="Masukkan username"
+                required
+              />
+            </div>
+            <div style={{ marginBottom: '2rem' }}>
+              <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: '600', color: 'rgba(255,255,255,0.8)' }}>
+                Password
+              </label>
+              <input
+                type="password"
+                className="input-field"
+                value={passwordInput}
+                onChange={(e) => setPasswordInput(e.target.value)}
+                placeholder="Masukkan password"
+                required
+              />
+            </div>
+            <button type="submit" className="btn-primary" style={{ width: '100%', padding: '0.85rem', fontSize: '1.1rem' }}>
+              Masuk
+            </button>
+          </form>
+        </div>
+      </div>
+    )
+  }
+
   return (
     <div className="app-container" style={{ minHeight: '100vh', padding: '2rem' }}>
       <div style={{ maxWidth: '1400px', margin: '0 auto' }}>
@@ -202,6 +279,13 @@ function Admin() {
           <h1 style={{ fontSize: '2.5rem', fontWeight: '800', color: 'white', margin: 0 }}>
             👥 Admin Dashboard
           </h1>
+          <button 
+            className="btn-danger" 
+            onClick={handleLogout}
+            style={{ padding: '0.75rem 1.5rem', fontSize: '1rem', fontWeight: '600', display: 'flex', alignItems: 'center', gap: '0.5rem' }}
+          >
+            🚪 Logout
+          </button>
         </div>
 
         {/* Action Buttons */}

@@ -16,7 +16,7 @@ spec:
     spec:
       containers:
       - name: wedding-absen
-        image: maulanamalik/public-image:invitation-wedding-qr-v1
+        image: maulanamalik/public-image:invitation-wedding-qr-stable
         imagePullPolicy: IfNotPresent
         ports:
         - containerPort: 80
