@@ -42,6 +42,30 @@ function Admin() {
     setPasswordInput('')
   }
 
+  // Search and Pagination states
+  const [searchQuery, setSearchQuery] = useState('')
+  const [currentPage, setCurrentPage] = useState(1)
+  const ITEMS_PER_PAGE = 20
+
+  // Filter guests based on search query
+  const filteredGuests = guests.filter(guest => {
+    const name = guest.nama_tamu?.toLowerCase() || ''
+    const address = guest.alamat_tamu?.toLowerCase() || ''
+    const query = searchQuery.toLowerCase()
+    return name.includes(query) || address.includes(query)
+  })
+
+  // Calculate pagination details
+  const totalPages = Math.ceil(filteredGuests.length / ITEMS_PER_PAGE)
+  const startIndex = (currentPage - 1) * ITEMS_PER_PAGE
+  const paginatedGuests = filteredGuests.slice(startIndex, startIndex + ITEMS_PER_PAGE)
+
+  // Reset page to 1 when search query changes
+  const handleSearchChange = (e) => {
+    setSearchQuery(e.target.value)
+    setCurrentPage(1)
+  }
+
   // Initialize S3 client
   const s3Client = new S3Client({
     endpoint: window.env?.VITE_SUPABASE_STORAGE_ENDPOINT || import.meta.env.VITE_SUPABASE_STORAGE_ENDPOINT,
@@ -288,31 +312,73 @@ function Admin() {
           </button>
         </div>
 
-        {/* Action Buttons */}
+        {/* Action & Search Buttons */}
         <div className="card" style={{ marginBottom: '2rem' }}>
-          <div style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap' }}>
-            <button
-              className="btn-primary"
-              onClick={() => setShowAddModal(true)}
-              style={{ flex: '1', minWidth: '200px' }}
-            >
-              ➕ Tambah Tamu
-            </button>
-            <button
-              className="btn-primary"
-              onClick={generateAllQRCodes}
-              disabled={generating}
-              style={{ flex: '1', minWidth: '200px', opacity: generating ? 0.6 : 1 }}
-            >
-              {generating ? '⏳ Generating...' : '🎫 Generate Semua QR Code'}
-            </button>
-            <button
-              className="btn-secondary"
-              onClick={fetchGuests}
-              style={{ flex: '1', minWidth: '200px' }}
-            >
-              🔄 Refresh Data
-            </button>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+            <div style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap' }}>
+              <button
+                className="btn-primary"
+                onClick={() => setShowAddModal(true)}
+                style={{ flex: '1', minWidth: '200px' }}
+              >
+                ➕ Tambah Tamu
+              </button>
+              <button
+                className="btn-primary"
+                onClick={generateAllQRCodes}
+                disabled={generating}
+                style={{ flex: '1', minWidth: '200px', opacity: generating ? 0.6 : 1 }}
+              >
+                {generating ? '⏳ Generating...' : '🎫 Generate Semua QR Code'}
+              </button>
+              <button
+                className="btn-secondary"
+                onClick={fetchGuests}
+                style={{ flex: '1', minWidth: '200px' }}
+              >
+                🔄 Refresh Data
+              </button>
+            </div>
+            
+            {/* Search Box */}
+            <div style={{ position: 'relative', width: '100%' }}>
+              <span style={{ position: 'absolute', left: '1rem', top: '50%', transform: 'translateY(-50%)', color: 'rgba(255,255,255,0.5)', fontSize: '1.1rem' }}>
+                🔍
+              </span>
+              <input
+                type="text"
+                className="input-field"
+                value={searchQuery}
+                onChange={handleSearchChange}
+                placeholder="Cari nama tamu atau alamat..."
+                style={{ 
+                  paddingLeft: '2.75rem', 
+                  margin: 0, 
+                  background: 'rgba(255,255,255,0.08)', 
+                  border: '1px solid rgba(255,255,255,0.15)',
+                  color: 'white'
+                }}
+              />
+              {searchQuery && (
+                <button
+                  onClick={() => { setSearchQuery(''); setCurrentPage(1); }}
+                  style={{
+                    position: 'absolute',
+                    right: '1rem',
+                    top: '50%',
+                    transform: 'translateY(-50%)',
+                    background: 'none',
+                    border: 'none',
+                    color: 'rgba(255,255,255,0.6)',
+                    cursor: 'pointer',
+                    fontSize: '1rem',
+                    padding: '0.2rem'
+                  }}
+                >
+                  ✕
+                </button>
+              )}
+            </div>
           </div>
         </div>
 
@@ -339,6 +405,10 @@ function Admin() {
               <div style={{ padding: '3rem', textAlign: 'center', color: '#666' }}>
                 Belum ada data tamu
               </div>
+            ) : filteredGuests.length === 0 ? (
+              <div style={{ padding: '3rem', textAlign: 'center', color: 'rgba(255,255,255,0.6)' }}>
+                Tidak ada data tamu yang cocok dengan pencarian "{searchQuery}"
+              </div>
             ) : (
               <table>
                 <thead>
@@ -353,9 +423,9 @@ function Admin() {
                   </tr>
                 </thead>
                 <tbody>
-                  {guests.map((guest, index) => (
+                  {paginatedGuests.map((guest, index) => (
                     <tr key={guest.id}>
-                      <td>{index + 1}</td>
+                      <td>{startIndex + index + 1}</td>
                       <td style={{ fontWeight: '600' }}>{guest.nama_tamu}</td>
                       <td>{guest.alamat_tamu}</td>
                       <td>
@@ -410,6 +480,41 @@ function Admin() {
               </table>
             )}
           </div>
+          
+          {/* Pagination Controls */}
+          {totalPages > 1 && (
+            <div style={{ 
+              display: 'flex', 
+              justifyContent: 'space-between', 
+              alignItems: 'center', 
+              padding: '1.5rem', 
+              borderTop: '1px solid rgba(255,255,255,0.1)',
+              flexWrap: 'wrap',
+              gap: '1rem'
+            }}>
+              <button
+                className="btn-secondary"
+                onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+                disabled={currentPage === 1}
+                style={{ padding: '0.5rem 1.25rem', margin: 0, opacity: currentPage === 1 ? 0.5 : 1 }}
+              >
+                ◀ Sebelumnya
+              </button>
+              
+              <span style={{ color: 'rgba(255,255,255,0.8)', fontWeight: '500' }}>
+                Halaman {currentPage} dari {totalPages}
+              </span>
+              
+              <button
+                className="btn-secondary"
+                onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
+                disabled={currentPage === totalPages}
+                style={{ padding: '0.5rem 1.25rem', margin: 0, opacity: currentPage === totalPages ? 0.5 : 1 }}
+              >
+                Berikutnya ▶
+              </button>
+            </div>
+          )}
         </div>
       </div>
 
