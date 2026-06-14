@@ -342,7 +342,7 @@ function Admin() {
             
             {/* Search Box */}
             <div style={{ position: 'relative', width: '100%' }}>
-              <span style={{ position: 'absolute', left: '1rem', top: '50%', transform: 'translateY(-50%)', color: 'rgba(255,255,255,0.5)', fontSize: '1.1rem' }}>
+              <span style={{ position: 'absolute', left: '1rem', top: '50%', transform: 'translateY(-50%)', color: '#888', fontSize: '1.1rem' }}>
                 🔍
               </span>
               <input
@@ -354,9 +354,7 @@ function Admin() {
                 style={{ 
                   paddingLeft: '2.75rem', 
                   margin: 0, 
-                  background: 'rgba(255,255,255,0.08)', 
-                  border: '1px solid rgba(255,255,255,0.15)',
-                  color: 'white'
+                  color: '#333'
                 }}
               />
               {searchQuery && (
@@ -369,9 +367,9 @@ function Admin() {
                     transform: 'translateY(-50%)',
                     background: 'none',
                     border: 'none',
-                    color: 'rgba(255,255,255,0.6)',
+                    color: '#888',
                     cursor: 'pointer',
-                    fontSize: '1rem',
+                    fontSize: '1.2rem',
                     padding: '0.2rem'
                   }}
                 >
