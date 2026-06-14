@@ -5,7 +5,7 @@ metadata:
   labels:
     app: wedding-absen
 spec:
-  replicas: 2
+  replicas: 1
   selector:
     matchLabels:
       app: wedding-absen
@@ -16,10 +16,13 @@ spec:
     spec:
       containers:
       - name: wedding-absen
-        image: wedding-absen:latest
+        image: maulanamalik/public-image:invitation-wedding-qr-v1
         imagePullPolicy: IfNotPresent
         ports:
         - containerPort: 80
+        envFrom:
+        - secretRef:
+            name: wedding-absen-secret
         resources:
           limits:
             cpu: "500m"

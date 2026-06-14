@@ -15,11 +15,11 @@ function Admin() {
 
   // Initialize S3 client
   const s3Client = new S3Client({
-    endpoint: import.meta.env.VITE_SUPABASE_STORAGE_ENDPOINT,
-    region: import.meta.env.VITE_S3_REGION,
+    endpoint: window.env?.VITE_SUPABASE_STORAGE_ENDPOINT || import.meta.env.VITE_SUPABASE_STORAGE_ENDPOINT,
+    region: window.env?.VITE_S3_REGION || import.meta.env.VITE_S3_REGION,
     credentials: {
-      accessKeyId: import.meta.env.VITE_S3_ACCESS_KEY_ID,
-      secretAccessKey: import.meta.env.VITE_S3_SECRET_ACCESS_KEY,
+      accessKeyId: window.env?.VITE_S3_ACCESS_KEY_ID || import.meta.env.VITE_S3_ACCESS_KEY_ID,
+      secretAccessKey: window.env?.VITE_S3_SECRET_ACCESS_KEY || import.meta.env.VITE_S3_SECRET_ACCESS_KEY,
     },
     forcePathStyle: true
   })
@@ -73,7 +73,7 @@ function Admin() {
       // Upload to Supabase S3 bucket
       const fileName = `wedding-scan/${guest.id}.png`
       const command = new PutObjectCommand({
-        Bucket: 'devaq',
+        Bucket: 'assets-devaq',
         Key: fileName,
         Body: buffer,
         ContentType: 'image/png',
@@ -92,7 +92,7 @@ function Admin() {
 
       setSuccess(`QR code berhasil dibuat untuk ${guest.nama_tamu}`)
       await fetchGuests()
-      
+
       setTimeout(() => setSuccess(null), 3000)
     } catch (err) {
       console.error('Error generating QR code:', err)
@@ -113,7 +113,7 @@ function Admin() {
 
     setGenerating(true)
     let successCount = 0
-    
+
     for (const guest of ungeneratedGuests) {
       try {
         await generateQRCode(guest)
@@ -147,7 +147,7 @@ function Admin() {
       setShowAddModal(false)
       setSuccess('Tamu berhasil ditambahkan!')
       await fetchGuests()
-      
+
       setTimeout(() => setSuccess(null), 3000)
     } catch (err) {
       console.error('Error adding guest:', err)
@@ -170,7 +170,7 @@ function Admin() {
 
       setSuccess('Tamu berhasil dihapus!')
       await fetchGuests()
-      
+
       setTimeout(() => setSuccess(null), 3000)
     } catch (err) {
       console.error('Error deleting guest:', err)
@@ -207,23 +207,23 @@ function Admin() {
         {/* Action Buttons */}
         <div className="card" style={{ marginBottom: '2rem' }}>
           <div style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap' }}>
-            <button 
-              className="btn-primary" 
+            <button
+              className="btn-primary"
               onClick={() => setShowAddModal(true)}
               style={{ flex: '1', minWidth: '200px' }}
             >
               ➕ Tambah Tamu
             </button>
-            <button 
-              className="btn-primary" 
+            <button
+              className="btn-primary"
               onClick={generateAllQRCodes}
               disabled={generating}
               style={{ flex: '1', minWidth: '200px', opacity: generating ? 0.6 : 1 }}
             >
               {generating ? '⏳ Generating...' : '🎫 Generate Semua QR Code'}
             </button>
-            <button 
-              className="btn-secondary" 
+            <button
+              className="btn-secondary"
               onClick={fetchGuests}
               style={{ flex: '1', minWidth: '200px' }}
             >
@@ -275,9 +275,9 @@ function Admin() {
                       <td style={{ fontWeight: '600' }}>{guest.nama_tamu}</td>
                       <td>{guest.alamat_tamu}</td>
                       <td>
-                        <span style={{ 
-                          padding: '0.25rem 0.75rem', 
-                          borderRadius: '12px', 
+                        <span style={{
+                          padding: '0.25rem 0.75rem',
+                          borderRadius: '12px',
                           fontSize: '0.85rem',
                           fontWeight: '600',
                           background: guest.hadir ? '#d4edda' : '#fff3cd',
@@ -289,20 +289,20 @@ function Admin() {
                       <td>{formatDate(guest.checkin)}</td>
                       <td>
                         {guest.is_generated ? (
-                          <a 
-                            href={getQRCodeUrl(guest.id, guest.is_generated)} 
-                            target="_blank" 
+                          <a
+                            href={getQRCodeUrl(guest.id, guest.is_generated)}
+                            target="_blank"
                             rel="noopener noreferrer"
                           >
-                            <img 
-                              src={getQRCodeUrl(guest.id, guest.is_generated)} 
-                              alt="QR Code" 
+                            <img
+                              src={getQRCodeUrl(guest.id, guest.is_generated)}
+                              alt="QR Code"
                               className="qr-image"
                             />
                           </a>
                         ) : (
-                          <button 
-                            className="btn-secondary" 
+                          <button
+                            className="btn-secondary"
                             onClick={() => generateQRCode(guest)}
                             disabled={generating}
                             style={{ padding: '0.5rem 1rem', fontSize: '0.8rem' }}
@@ -312,8 +312,8 @@ function Admin() {
                         )}
                       </td>
                       <td>
-                        <button 
-                          className="btn-danger" 
+                        <button
+                          className="btn-danger"
                           onClick={() => deleteGuest(guest.id, guest.nama_tamu)}
                           style={{ padding: '0.5rem 0.75rem' }}
                         >
@@ -336,7 +336,7 @@ function Admin() {
             <h2 style={{ fontSize: '1.75rem', fontWeight: '700', marginBottom: '1.5rem', color: '#333' }}>
               ➕ Tambah Tamu Baru
             </h2>
-            
+
             <form onSubmit={addGuest}>
               <div style={{ marginBottom: '1.5rem' }}>
                 <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: '600', color: '#333' }}>
@@ -351,7 +351,7 @@ function Admin() {
                   required
                 />
               </div>
-              
+
               <div style={{ marginBottom: '1.5rem' }}>
                 <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: '600', color: '#333' }}>
                   Alamat *
@@ -368,17 +368,17 @@ function Admin() {
               </div>
 
               <div style={{ display: 'flex', gap: '1rem' }}>
-                <button 
-                  type="button" 
-                  className="btn-secondary" 
+                <button
+                  type="button"
+                  className="btn-secondary"
                   onClick={() => setShowAddModal(false)}
                   style={{ flex: 1 }}
                 >
                   Batal
                 </button>
-                <button 
-                  type="submit" 
-                  className="btn-primary" 
+                <button
+                  type="submit"
+                  className="btn-primary"
                   disabled={loading}
                   style={{ flex: 1 }}
                 >

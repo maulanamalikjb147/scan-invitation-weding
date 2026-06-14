@@ -26,6 +26,11 @@ COPY containerisasi/nginx.conf /etc/nginx/conf.d/default.conf
 # Copy built assets from builder stage
 COPY --from=build /app/dist /usr/share/nginx/html
 
+# Copy env.sh script and make it executable
+COPY containerisasi/env.sh /env.sh
+RUN chmod +x /env.sh
+
 EXPOSE 80
 
-CMD ["nginx", "-g", "daemon off;"]
+# Run env.sh first to generate env.js, then start nginx
+CMD ["/bin/sh", "-c", "/env.sh && nginx -g 'daemon off;'"]
