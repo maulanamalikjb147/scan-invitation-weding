@@ -1,12 +1,12 @@
 import { useState, useEffect, useRef } from 'react'
 import { Html5Qrcode } from 'html5-qrcode'
 import { supabase } from '../supabaseClient'
+import Icon from '../components/Icon'
 
 function Scanner() {
   const [scanning, setScanning] = useState(false)
   const [welcomeData, setWelcomeData] = useState(null)
   const [error, setError] = useState(null)
-  const scannerRef = useRef(null)
   const html5QrCodeRef = useRef(null)
 
   const startScanner = async () => {
@@ -22,18 +22,17 @@ function Scanner() {
           aspectRatio: 1.0
         },
         {
-          fps: 30,  // 3x lebih cepat dari sebelumnya (10 fps)
+          fps: 30,
           qrbox: function(viewfinderWidth, viewfinderHeight) {
-            // Dynamic qrbox size based on screen
             let minEdge = Math.min(viewfinderWidth, viewfinderHeight);
-            let qrboxSize = Math.floor(minEdge * 0.8);  // 80% of viewport
+            let qrboxSize = Math.floor(minEdge * 0.8);
             return {
               width: qrboxSize,
               height: qrboxSize
             };
           },
           aspectRatio: 1.0,
-          disableFlip: false,  // Allow flipped QR codes
+          disableFlip: false,
           videoConstraints: {
             advanced: [{ zoom: 1.0 }]
           }
@@ -62,16 +61,13 @@ function Scanner() {
 
   const onScanSuccess = async (decodedText) => {
     try {
-      // Pause scanning temporarily to prevent multiple scans
       if (html5QrCodeRef.current) {
         await html5QrCodeRef.current.pause()
       }
       
-      // Parse QR code data
       const guestData = JSON.parse(decodedText)
       const { id, nama_tamu, alamat_tamu } = guestData
 
-      // Update database
       const { error: updateError } = await supabase
         .from('data_tamu')
         .update({ 
@@ -84,16 +80,13 @@ function Scanner() {
         throw updateError
       }
 
-      // Show welcome message
       setWelcomeData({
         nama: nama_tamu,
         alamat: alamat_tamu
       })
 
-      // Auto close and resume scanning after 5 seconds
       setTimeout(() => {
         setWelcomeData(null)
-        // Resume scanning after popup closes
         if (html5QrCodeRef.current && scanning) {
           html5QrCodeRef.current.resume()
         }
@@ -103,7 +96,6 @@ function Scanner() {
       setError("QR code tidak valid atau terjadi kesalahan")
       setTimeout(() => {
         setError(null)
-        // Resume scanning after error
         if (html5QrCodeRef.current && scanning) {
           html5QrCodeRef.current.resume()
         }
@@ -111,7 +103,7 @@ function Scanner() {
     }
   }
 
-  const onScanError = (errorMessage) => {
+  const onScanError = () => {
     // Ignore continuous scan errors
   }
 
@@ -124,45 +116,101 @@ function Scanner() {
   }, [])
 
   return (
-    <div className="app-container" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '100vh', padding: '1rem' }}>
-      <div className="card" style={{ maxWidth: '600px', width: '100%', textAlign: 'center' }}>
-        <h1 style={{ fontSize: '2.5rem', fontWeight: '800', background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', marginBottom: '1rem' }}>
-          Wedding Check-in
-        </h1>
-        <p style={{ color: '#666', marginBottom: '2rem', fontSize: '1.1rem' }}>
-          Scan QR code untuk check-in
-        </p>
-
-        <div id="qr-reader" style={{ 
-          borderRadius: '16px', 
-          overflow: 'hidden', 
-          marginBottom: '1rem',
-          display: scanning ? 'block' : 'none',
-          boxShadow: scanning ? '0 0 20px rgba(102, 126, 234, 0.3)' : 'none',
-          border: scanning ? '3px solid #667eea' : 'none'
-        }}></div>
-
-        {scanning && (
-          <div style={{
-            background: 'rgba(102, 126, 234, 0.1)',
-            padding: '0.75rem',
-            borderRadius: '12px',
-            marginBottom: '1rem',
-            color: '#667eea',
-            fontWeight: '600',
-            fontSize: '0.95rem'
+    <div className="product-tile-parchment" style={{ 
+      display: 'flex', 
+      alignItems: 'center', 
+      justifyContent: 'center', 
+      minHeight: '100vh', 
+      padding: 'var(--spacing-lg)',
+      background: 'var(--color-canvas-parchment)'
+    }}>
+      <div style={{ 
+        maxWidth: '480px', 
+        width: '100%', 
+        textAlign: 'center' 
+      }}>
+        {/* Logo / Brand */}
+        <div style={{ marginBottom: 'var(--spacing-xxl)' }}>
+          <div style={{ 
+            marginBottom: 'var(--spacing-md)',
+            color: 'var(--color-ink)'
           }}>
-            📸 Arahkan kamera ke QR code...
+            <Icon name="rings" size={56} />
           </div>
-        )}
+          <h1 className="text-display-lg" style={{ 
+            color: 'var(--color-ink)',
+            marginBottom: 'var(--spacing-sm)'
+          }}>
+            Wedding Check-in
+          </h1>
+          <p className="text-body" style={{ 
+            color: 'var(--color-ink-muted-48)',
+            maxWidth: '320px',
+            margin: '0 auto'
+          }}>
+            Scan QR code untuk check-in tamu undangan
+          </p>
+        </div>
 
+        {/* Scanner Area */}
+        <div style={{ 
+          marginBottom: 'var(--spacing-lg)',
+          position: 'relative'
+        }}>
+          <div id="qr-reader" style={{ 
+            borderRadius: 'var(--rounded-lg)', 
+            overflow: 'hidden',
+            display: scanning ? 'block' : 'none',
+            border: '1px solid var(--color-hairline)',
+            background: 'var(--color-canvas)'
+          }}></div>
+
+          {scanning && (
+            <div style={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: 'var(--spacing-xs)',
+              padding: 'var(--spacing-sm)',
+              marginTop: 'var(--spacing-sm)',
+              color: 'var(--color-primary)',
+              fontFamily: 'var(--font-body)',
+              fontSize: '14px',
+              fontWeight: 400,
+              lineHeight: 1.43,
+              letterSpacing: '-0.224px'
+            }}>
+              <span style={{ 
+                display: 'inline-block',
+                width: '8px',
+                height: '8px',
+                borderRadius: 'var(--rounded-full)',
+                background: 'var(--color-primary)',
+                animation: 'pulse 1.5s ease-in-out infinite'
+              }}></span>
+              Arahkan kamera ke QR code
+            </div>
+          )}
+        </div>
+
+        {/* Action Buttons */}
         {!scanning && !welcomeData && (
           <button 
             className="btn-primary" 
             onClick={startScanner}
-            style={{ width: '100%', padding: '1.25rem', fontSize: '1.1rem', marginTop: '1rem' }}
+            style={{ 
+              width: '100%', 
+              padding: '14px 28px',
+              fontSize: '18px',
+              fontWeight: 300,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: 'var(--spacing-xs)'
+            }}
           >
-            🎥 Mulai Scan QR Code
+            <Icon name="camera" size={20} />
+            Mulai Scan QR Code
           </button>
         )}
 
@@ -170,73 +218,123 @@ function Scanner() {
           <button 
             className="btn-secondary" 
             onClick={stopScanner}
-            style={{ width: '100%', padding: '1rem' }}
+            style={{ 
+              width: '100%',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: 'var(--spacing-xs)'
+            }}
           >
-            ❌ Berhenti Scan
+            <Icon name="x" size={18} />
+            Berhenti Scan
           </button>
         )}
 
+        {/* Error Message */}
         {error && (
-          <div style={{ 
-            background: '#ffe5e5', 
-            color: '#ff4757', 
-            padding: '1rem', 
-            borderRadius: '12px', 
-            marginTop: '1rem',
-            fontWeight: '500'
+          <div className="toast toast-error" style={{ 
+            marginTop: 'var(--spacing-md)',
+            display: 'flex',
+            alignItems: 'center',
+            gap: 'var(--spacing-xs)'
           }}>
+            <Icon name="alertCircle" size={16} />
             {error}
           </div>
         )}
+
+        {/* Footer */}
+        <p className="text-fine-print" style={{ 
+          color: 'var(--color-ink-muted-48)',
+          marginTop: 'var(--spacing-xxl)'
+        }}>
+          Pastikan kamera diizinkan untuk menggunakan scanner
+        </p>
       </div>
 
       {/* Welcome Modal */}
       {welcomeData && (
         <div className="modal-overlay" onClick={() => {
           setWelcomeData(null)
-          // Resume scanning when modal closed
           if (html5QrCodeRef.current && scanning) {
             html5QrCodeRef.current.resume()
           }
         }}>
-          <div className="modal-content" onClick={(e) => e.stopPropagation()} style={{ textAlign: 'center' }}>
-            <div style={{ fontSize: '4rem', marginBottom: '1rem' }}>🎉</div>
-            <h2 style={{ fontSize: '2rem', fontWeight: '700', color: '#667eea', marginBottom: '0.5rem' }}>
+          <div className="modal-content" onClick={(e) => e.stopPropagation()} style={{ 
+            textAlign: 'center',
+            padding: 'var(--spacing-xxl) var(--spacing-xl)'
+          }}>
+            {/* Success Icon */}
+            <div style={{ 
+              width: '64px',
+              height: '64px',
+              borderRadius: 'var(--rounded-full)',
+              background: '#d4edda',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              margin: '0 auto var(--spacing-lg)',
+              color: '#155724'
+            }}>
+              <Icon name="checkCircle" size={32} />
+            </div>
+
+            <h2 className="text-tagline" style={{ 
+              color: 'var(--color-ink)',
+              marginBottom: 'var(--spacing-xs)'
+            }}>
               Welcome!
             </h2>
-            <h3 style={{ fontSize: '1.75rem', fontWeight: '600', color: '#333', marginBottom: '0.5rem' }}>
+
+            <h3 className="text-display-md" style={{ 
+              color: 'var(--color-ink)',
+              marginBottom: 'var(--spacing-sm)',
+              fontSize: '28px'
+            }}>
               {welcomeData.nama}
             </h3>
-            <p style={{ fontSize: '1.1rem', color: '#666', marginBottom: '1.5rem' }}>
-              📍 {welcomeData.alamat}
-            </p>
-            <div style={{ 
-              background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)', 
-              color: 'white', 
-              padding: '1rem 2rem', 
-              borderRadius: '12px',
-              fontSize: '1.2rem',
-              fontWeight: '600',
-              marginBottom: '1rem'
+
+            <p className="text-caption" style={{ 
+              color: 'var(--color-ink-muted-48)',
+              marginBottom: 'var(--spacing-xl)'
             }}>
-              Enjoy with our wedding! 💕
+              {welcomeData.alamat}
+            </p>
+
+            <div style={{ 
+              background: 'var(--color-canvas-parchment)',
+              padding: 'var(--spacing-md) var(--spacing-lg)',
+              borderRadius: 'var(--rounded-sm)',
+              marginBottom: 'var(--spacing-xl)'
+            }}>
+              <p className="text-body-strong" style={{ color: 'var(--color-ink)' }}>
+                Enjoy with our wedding!
+              </p>
             </div>
+
             <button 
-              className="btn-secondary" 
+              className="btn-primary" 
               onClick={() => {
                 setWelcomeData(null)
-                // Resume scanning when button clicked
                 if (html5QrCodeRef.current && scanning) {
                   html5QrCodeRef.current.resume()
                 }
               }}
-              style={{ marginTop: '1rem' }}
+              style={{ width: '100%' }}
             >
               Tutup
             </button>
           </div>
         </div>
       )}
+
+      <style>{`
+        @keyframes pulse {
+          0%, 100% { opacity: 1; transform: scale(1); }
+          50% { opacity: 0.5; transform: scale(0.8); }
+        }
+      `}</style>
     </div>
   )
 }

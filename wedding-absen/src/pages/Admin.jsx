@@ -3,11 +3,13 @@ import { supabase } from '../supabaseClient'
 import QRCode from 'qrcode'
 import { S3Client, PutObjectCommand } from '@aws-sdk/client-s3'
 import { Buffer } from 'buffer'
+import Icon from '../components/Icon'
 
 function Admin() {
   const [guests, setGuests] = useState([])
+  const [configTamuDari, setConfigTamuDari] = useState([])
   const [showAddModal, setShowAddModal] = useState(false)
-  const [newGuest, setNewGuest] = useState({ nama_tamu: '', alamat_tamu: '' })
+  const [newGuest, setNewGuest] = useState({ nama_tamu: '', alamat_tamu: '', tamu_from: '' })
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState(null)
   const [success, setSuccess] = useState(null)
@@ -51,8 +53,9 @@ function Admin() {
   const filteredGuests = guests.filter(guest => {
     const name = guest.nama_tamu?.toLowerCase() || ''
     const address = guest.alamat_tamu?.toLowerCase() || ''
+    const from = guest.tamu_from?.toLowerCase() || ''
     const query = searchQuery.toLowerCase()
-    return name.includes(query) || address.includes(query)
+    return name.includes(query) || address.includes(query) || from.includes(query)
   })
 
   // Calculate pagination details
@@ -77,10 +80,6 @@ function Admin() {
     forcePathStyle: true
   })
 
-  useEffect(() => {
-    fetchGuests()
-  }, [])
-
   const fetchGuests = async () => {
     setLoading(true)
     try {
@@ -99,17 +98,36 @@ function Admin() {
     }
   }
 
+  const fetchConfigTamuDari = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('config_tamu_dari')
+        .select('*')
+        .order('name', { ascending: true })
+
+      if (error) throw error
+      console.log('config_tamu_dari data:', data)
+      setConfigTamuDari(data || [])
+    } catch (err) {
+      console.error('Error fetching config_tamu_dari:', err)
+    }
+  }
+
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    fetchGuests()
+    fetchConfigTamuDari()
+  }, [])
+
   const generateQRCode = async (guest) => {
     setGenerating(true)
     try {
-      // Create QR code data
       const qrData = JSON.stringify({
         id: guest.id,
         nama_tamu: guest.nama_tamu,
         alamat_tamu: guest.alamat_tamu
       })
 
-      // Generate QR code as data URL
       const qrCodeDataUrl = await QRCode.toDataURL(qrData, {
         width: 500,
         margin: 2,
@@ -119,11 +137,9 @@ function Admin() {
         }
       })
 
-      // Convert data URL to buffer
       const base64Data = qrCodeDataUrl.replace(/^data:image\/png;base64,/, '')
       const buffer = Buffer.from(base64Data, 'base64')
 
-      // Upload to Supabase S3 bucket
       const fileName = `wedding-scan/${guest.id}.png`
       const command = new PutObjectCommand({
         Bucket: 'assets-devaq',
@@ -135,7 +151,6 @@ function Admin() {
 
       await s3Client.send(command)
 
-      // Update database
       const { error: updateError } = await supabase
         .from('data_tamu')
         .update({ is_generated: true })
@@ -190,13 +205,14 @@ function Admin() {
         .insert([{
           nama_tamu: newGuest.nama_tamu,
           alamat_tamu: newGuest.alamat_tamu,
+          tamu_from: newGuest.tamu_from || null,
           hadir: false,
           is_generated: false
         }])
 
       if (error) throw error
 
-      setNewGuest({ nama_tamu: '', alamat_tamu: '' })
+      setNewGuest({ nama_tamu: '', alamat_tamu: '', tamu_from: '' })
       setShowAddModal(false)
       setSuccess('Tamu berhasil ditambahkan!')
       await fetchGuests()
@@ -249,44 +265,75 @@ function Admin() {
 
   if (!isLoggedIn) {
     return (
-      <div className="app-container" style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1rem' }}>
-        <div className="card" style={{ maxWidth: '400px', width: '100%', padding: '2.5rem', boxShadow: '0 8px 32px 0 rgba(31, 38, 135, 0.37)' }}>
-          <h2 style={{ fontSize: '2rem', fontWeight: '800', marginBottom: '1.5rem', color: 'white', textAlign: 'center' }}>
-            🔑 Admin Login
-          </h2>
+      <div className="product-tile-parchment" style={{ 
+        minHeight: '100vh', 
+        display: 'flex', 
+        alignItems: 'center', 
+        justifyContent: 'center', 
+        padding: 'var(--spacing-lg)',
+        background: 'var(--color-canvas-parchment)'
+      }}>
+        <div style={{ 
+          maxWidth: '400px', 
+          width: '100%',
+          textAlign: 'center'
+        }}>
+          {/* Logo */}
+          <div style={{ 
+            marginBottom: 'var(--spacing-lg)',
+            color: 'var(--color-ink)'
+          }}>
+            <Icon name="lock" size={48} />
+          </div>
+
+          <h1 className="text-display-md" style={{ 
+            color: 'var(--color-ink)',
+            marginBottom: 'var(--spacing-xs)'
+          }}>
+            Admin
+          </h1>
+
+          <p className="text-body" style={{ 
+            color: 'var(--color-ink-muted-48)',
+            marginBottom: 'var(--spacing-xxl)'
+          }}>
+            Masuk untuk mengelola data tamu
+          </p>
+
           {loginError && (
-            <div style={{ background: '#ffe5e5', color: '#ff4757', padding: '0.75rem', borderRadius: '8px', marginBottom: '1.5rem', fontWeight: '600', fontSize: '0.9rem', textAlign: 'center' }}>
-              ❌ {loginError}
+            <div className="toast toast-error" style={{ 
+              marginBottom: 'var(--spacing-md)',
+              display: 'flex',
+              alignItems: 'center',
+              gap: 'var(--spacing-xs)'
+            }}>
+              <Icon name="alertCircle" size={16} />
+              {loginError}
             </div>
           )}
+
           <form onSubmit={handleLogin}>
-            <div style={{ marginBottom: '1.25rem' }}>
-              <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: '600', color: 'rgba(255,255,255,0.8)' }}>
-                Username
-              </label>
+            <div style={{ marginBottom: 'var(--spacing-md)' }}>
               <input
                 type="text"
                 className="input-field"
                 value={usernameInput}
                 onChange={(e) => setUsernameInput(e.target.value)}
-                placeholder="Masukkan username"
+                placeholder="Username"
                 required
               />
             </div>
-            <div style={{ marginBottom: '2rem' }}>
-              <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: '600', color: 'rgba(255,255,255,0.8)' }}>
-                Password
-              </label>
+            <div style={{ marginBottom: 'var(--spacing-lg)' }}>
               <input
                 type="password"
                 className="input-field"
                 value={passwordInput}
                 onChange={(e) => setPasswordInput(e.target.value)}
-                placeholder="Masukkan password"
+                placeholder="Password"
                 required
               />
             </div>
-            <button type="submit" className="btn-primary" style={{ width: '100%', padding: '0.85rem', fontSize: '1.1rem' }}>
+            <button type="submit" className="btn-primary" style={{ width: '100%' }}>
               Masuk
             </button>
           </form>
@@ -296,149 +343,330 @@ function Admin() {
   }
 
   return (
-    <div className="app-container" style={{ minHeight: '100vh', padding: '2rem' }}>
-      <div style={{ maxWidth: '1400px', margin: '0 auto' }}>
-        {/* Header */}
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem', flexWrap: 'wrap', gap: '1rem' }}>
-          <h1 style={{ fontSize: '2.5rem', fontWeight: '800', color: 'white', margin: 0 }}>
-            👥 Admin Dashboard
-          </h1>
+    <div style={{ 
+      minHeight: '100vh', 
+      background: 'var(--color-canvas-parchment)'
+    }}>
+      {/* Global Nav */}
+      <nav style={{ 
+        height: '44px',
+        background: 'var(--color-surface-black)',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        padding: '0 var(--spacing-lg)',
+        position: 'sticky',
+        top: 0,
+        zIndex: 100
+      }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--spacing-lg)' }}>
+          <span className="text-nav-link" style={{ color: 'var(--color-on-dark)', fontWeight: 600 }}>
+            Wedding Admin
+          </span>
+        </div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--spacing-md)' }}>
           <button 
-            className="btn-danger" 
+            className="btn-dark-utility"
             onClick={handleLogout}
-            style={{ padding: '0.75rem 1.5rem', fontSize: '1rem', fontWeight: '600', display: 'flex', alignItems: 'center', gap: '0.5rem' }}
+            style={{ 
+              fontSize: '12px', 
+              padding: '6px 12px',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '6px'
+            }}
           >
-            🚪 Logout
+            <Icon name="logout" size={14} />
+            Logout
           </button>
         </div>
+      </nav>
 
-        {/* Action & Search Buttons */}
-        <div className="card" style={{ marginBottom: '2rem' }}>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
-            <div style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap' }}>
-              <button
-                className="btn-primary"
-                onClick={() => setShowAddModal(true)}
-                style={{ flex: '1', minWidth: '200px' }}
-              >
-                ➕ Tambah Tamu
-              </button>
-              <button
-                className="btn-primary"
-                onClick={generateAllQRCodes}
-                disabled={generating}
-                style={{ flex: '1', minWidth: '200px', opacity: generating ? 0.6 : 1 }}
-              >
-                {generating ? '⏳ Generating...' : '🎫 Generate Semua QR Code'}
-              </button>
-              <button
-                className="btn-secondary"
-                onClick={fetchGuests}
-                style={{ flex: '1', minWidth: '200px' }}
-              >
-                🔄 Refresh Data
-              </button>
+      {/* Sub Nav */}
+      <div style={{ 
+        height: '52px',
+        background: 'var(--color-canvas)',
+        borderBottom: '1px solid var(--color-hairline)',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        padding: '0 var(--spacing-lg)',
+        position: 'sticky',
+        top: '44px',
+        zIndex: 99
+      }}>
+        <h2 className="text-tagline" style={{ color: 'var(--color-ink)' }}>
+          Dashboard
+        </h2>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--spacing-sm)' }}>
+          <button 
+            className="btn-pearl-capsule"
+            onClick={fetchGuests}
+            style={{ 
+              fontSize: '12px', 
+              padding: '6px 12px',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '6px'
+            }}
+          >
+            <Icon name="refresh" size={14} />
+            Refresh
+          </button>
+          <button 
+            className="btn-primary"
+            onClick={() => setShowAddModal(true)}
+            style={{ 
+              fontSize: '12px', 
+              padding: '6px 14px',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '6px'
+            }}
+          >
+            <Icon name="plus" size={14} />
+            Tambah Tamu
+          </button>
+        </div>
+      </div>
+
+      {/* Main Content */}
+      <div style={{ 
+        maxWidth: '1200px', 
+        margin: '0 auto', 
+        padding: 'var(--spacing-xl) var(--spacing-lg)'
+      }}>
+        {/* Stats */}
+        <div style={{ 
+          display: 'grid', 
+          gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
+          gap: 'var(--spacing-md)',
+          marginBottom: 'var(--spacing-xl)'
+        }}>
+          <div className="card" style={{ display: 'flex', alignItems: 'center', gap: 'var(--spacing-md)' }}>
+            <div style={{ 
+              width: '44px',
+              height: '44px',
+              borderRadius: 'var(--rounded-sm)',
+              background: 'var(--color-canvas-parchment)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              color: 'var(--color-ink-muted-80)'
+            }}>
+              <Icon name="users" size={22} />
             </div>
-            
-            {/* Search Box */}
-            <div style={{ position: 'relative', width: '100%' }}>
-              <span style={{ position: 'absolute', left: '1rem', top: '50%', transform: 'translateY(-50%)', color: '#888', fontSize: '1.1rem' }}>
-                🔍
-              </span>
+            <div>
+              <p className="text-caption" style={{ color: 'var(--color-ink-muted-48)', marginBottom: 'var(--spacing-xxs)' }}>
+                Total Tamu
+              </p>
+              <p className="text-display-md" style={{ color: 'var(--color-ink)', fontSize: '28px' }}>
+                {guests.length}
+              </p>
+            </div>
+          </div>
+          <div className="card" style={{ display: 'flex', alignItems: 'center', gap: 'var(--spacing-md)' }}>
+            <div style={{ 
+              width: '44px',
+              height: '44px',
+              borderRadius: 'var(--rounded-sm)',
+              background: '#d4edda',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              color: '#155724'
+            }}>
+              <Icon name="userCheck" size={22} />
+            </div>
+            <div>
+              <p className="text-caption" style={{ color: 'var(--color-ink-muted-48)', marginBottom: 'var(--spacing-xxs)' }}>
+                Hadir
+              </p>
+              <p className="text-display-md" style={{ color: '#155724', fontSize: '28px' }}>
+                {guests.filter(g => g.hadir).length}
+              </p>
+            </div>
+          </div>
+          <div className="card" style={{ display: 'flex', alignItems: 'center', gap: 'var(--spacing-md)' }}>
+            <div style={{ 
+              width: '44px',
+              height: '44px',
+              borderRadius: 'var(--rounded-sm)',
+              background: 'rgba(0, 102, 204, 0.1)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              color: 'var(--color-primary)'
+            }}>
+              <Icon name="qrCode" size={22} />
+            </div>
+            <div>
+              <p className="text-caption" style={{ color: 'var(--color-ink-muted-48)', marginBottom: 'var(--spacing-xxs)' }}>
+                QR Generated
+              </p>
+              <p className="text-display-md" style={{ color: 'var(--color-primary)', fontSize: '28px' }}>
+                {guests.filter(g => g.is_generated).length}
+              </p>
+            </div>
+          </div>
+        </div>
+
+        {/* Search & Actions */}
+        <div className="card" style={{ marginBottom: 'var(--spacing-lg)' }}>
+          <div style={{ 
+            display: 'flex', 
+            gap: 'var(--spacing-sm)',
+            flexWrap: 'wrap'
+          }}>
+            <div style={{ flex: 1, minWidth: '200px', position: 'relative' }}>
               <input
                 type="text"
                 className="input-field"
                 value={searchQuery}
                 onChange={handleSearchChange}
                 placeholder="Cari nama tamu atau alamat..."
-                style={{ 
-                  paddingLeft: '2.75rem', 
-                  margin: 0, 
-                  color: '#333'
-                }}
+                style={{ paddingLeft: '40px' }}
               />
+              <span style={{ 
+                position: 'absolute', 
+                left: '14px', 
+                top: '50%', 
+                transform: 'translateY(-50%)',
+                color: 'var(--color-ink-muted-48)',
+                display: 'flex'
+              }}>
+                <Icon name="search" size={16} />
+              </span>
               {searchQuery && (
                 <button
                   onClick={() => { setSearchQuery(''); setCurrentPage(1); }}
                   style={{
                     position: 'absolute',
-                    right: '1rem',
+                    right: '14px',
                     top: '50%',
                     transform: 'translateY(-50%)',
                     background: 'none',
                     border: 'none',
-                    color: '#888',
+                    color: 'var(--color-ink-muted-48)',
                     cursor: 'pointer',
-                    fontSize: '1.2rem',
-                    padding: '0.2rem'
+                    padding: 'var(--spacing-xxs)',
+                    display: 'flex'
                   }}
                 >
-                  ✕
+                  <Icon name="x" size={16} />
                 </button>
               )}
             </div>
+            <button
+              className="btn-pearl-capsule"
+              onClick={generateAllQRCodes}
+              disabled={generating}
+              style={{ 
+                opacity: generating ? 0.6 : 1,
+                display: 'flex',
+                alignItems: 'center',
+                gap: '6px'
+              }}
+            >
+              <Icon name="qrCode" size={14} />
+              {generating ? 'Generating...' : 'Generate Semua QR'}
+            </button>
           </div>
         </div>
 
-        {/* Success/Error Messages */}
+        {/* Toast Messages */}
         {success && (
-          <div style={{ background: '#d4edda', color: '#155724', padding: '1rem', borderRadius: '12px', marginBottom: '1rem', fontWeight: '500' }}>
-            ✅ {success}
+          <div className="toast toast-success" style={{ display: 'flex', alignItems: 'center', gap: 'var(--spacing-xs)' }}>
+            <Icon name="check" size={16} />
+            {success}
           </div>
         )}
         {error && (
-          <div style={{ background: '#ffe5e5', color: '#ff4757', padding: '1rem', borderRadius: '12px', marginBottom: '1rem', fontWeight: '500' }}>
-            ❌ {error}
+          <div className="toast toast-error" style={{ display: 'flex', alignItems: 'center', gap: 'var(--spacing-xs)' }}>
+            <Icon name="alertCircle" size={16} />
+            {error}
           </div>
         )}
 
         {/* Guest Table */}
-        <div className="card" style={{ padding: '0', overflow: 'hidden' }}>
-          <div style={{ overflowX: 'auto' }}>
-            {loading ? (
-              <div style={{ padding: '3rem', textAlign: 'center', color: '#666' }}>
-                Loading...
+        <div className="card" style={{ padding: 0, overflow: 'hidden' }}>
+          {loading ? (
+            <div style={{ 
+              padding: 'var(--spacing-xxl)', 
+              textAlign: 'center',
+              color: 'var(--color-ink-muted-48)'
+            }}>
+              <div style={{ 
+                width: '24px',
+                height: '24px',
+                border: '2px solid var(--color-hairline)',
+                borderTopColor: 'var(--color-primary)',
+                borderRadius: 'var(--rounded-full)',
+                animation: 'spin 1s linear infinite',
+                margin: '0 auto var(--spacing-sm)'
+              }}></div>
+              Memuat data...
+            </div>
+          ) : guests.length === 0 ? (
+            <div style={{ 
+              padding: 'var(--spacing-xxl)', 
+              textAlign: 'center',
+              color: 'var(--color-ink-muted-48)'
+            }}>
+              <div style={{ marginBottom: 'var(--spacing-sm)', display: 'flex', justifyContent: 'center' }}>
+                <Icon name="users" size={40} />
               </div>
-            ) : guests.length === 0 ? (
-              <div style={{ padding: '3rem', textAlign: 'center', color: '#666' }}>
-                Belum ada data tamu
+              Belum ada data tamu
+            </div>
+          ) : filteredGuests.length === 0 ? (
+            <div style={{ 
+              padding: 'var(--spacing-xxl)', 
+              textAlign: 'center',
+              color: 'var(--color-ink-muted-48)'
+            }}>
+              <div style={{ marginBottom: 'var(--spacing-sm)', display: 'flex', justifyContent: 'center' }}>
+                <Icon name="search" size={40} />
               </div>
-            ) : filteredGuests.length === 0 ? (
-              <div style={{ padding: '3rem', textAlign: 'center', color: 'rgba(255,255,255,0.6)' }}>
-                Tidak ada data tamu yang cocok dengan pencarian "{searchQuery}"
-              </div>
-            ) : (
+              Tidak ada data yang cocok dengan "{searchQuery}"
+            </div>
+          ) : (
+            <div style={{ overflowX: 'auto' }}>
               <table>
                 <thead>
                   <tr>
-                    <th>No</th>
+                    <th style={{ width: '48px' }}>No</th>
                     <th>Nama Tamu</th>
                     <th>Alamat</th>
-                    <th>Status</th>
-                    <th>Check-in</th>
-                    <th>QR Code</th>
-                    <th>Actions</th>
+                    <th style={{ width: '120px' }}>Tamu dari</th>
+                    <th style={{ width: '100px' }}>Status</th>
+                    <th style={{ width: '140px' }}>Check-in</th>
+                    <th style={{ width: '80px' }}>QR</th>
+                    <th style={{ width: '60px' }}></th>
                   </tr>
                 </thead>
                 <tbody>
                   {paginatedGuests.map((guest, index) => (
                     <tr key={guest.id}>
-                      <td>{startIndex + index + 1}</td>
-                      <td style={{ fontWeight: '600' }}>{guest.nama_tamu}</td>
-                      <td>{guest.alamat_tamu}</td>
+                      <td className="text-caption" style={{ color: 'var(--color-ink-muted-48)' }}>
+                        {startIndex + index + 1}
+                      </td>
                       <td>
-                        <span style={{
-                          padding: '0.25rem 0.75rem',
-                          borderRadius: '12px',
-                          fontSize: '0.85rem',
-                          fontWeight: '600',
-                          background: guest.hadir ? '#d4edda' : '#fff3cd',
-                          color: guest.hadir ? '#155724' : '#856404'
-                        }}>
-                          {guest.hadir ? '✅ Hadir' : '⏳ Belum'}
+                        <span className="text-body-strong">{guest.nama_tamu}</span>
+                      </td>
+                      <td className="text-caption">
+                        {guest.alamat_tamu}
+                      </td>
+                      <td className="text-caption">
+                        {guest.tamu_from || '-'}
+                      </td>
+                      <td>
+                        <span className={`badge ${guest.hadir ? 'badge-success' : 'badge-pending'}`}>
+                          {guest.hadir ? 'Hadir' : 'Belum'}
                         </span>
                       </td>
-                      <td>{formatDate(guest.checkin)}</td>
+                      <td className="text-caption" style={{ color: 'var(--color-ink-muted-48)' }}>
+                        {formatDate(guest.checkin)}
+                      </td>
                       <td>
                         {guest.is_generated ? (
                           <a
@@ -454,62 +682,82 @@ function Admin() {
                           </a>
                         ) : (
                           <button
-                            className="btn-secondary"
+                            className="btn-pearl-capsule"
                             onClick={() => generateQRCode(guest)}
                             disabled={generating}
-                            style={{ padding: '0.5rem 1rem', fontSize: '0.8rem' }}
+                            style={{ 
+                              fontSize: '12px', 
+                              padding: '4px 10px',
+                              display: 'flex',
+                              alignItems: 'center',
+                              gap: '4px'
+                            }}
                           >
+                            <Icon name="qrCode" size={12} />
                             Generate
                           </button>
                         )}
                       </td>
                       <td>
                         <button
-                          className="btn-danger"
+                          className="btn-icon-circular"
                           onClick={() => deleteGuest(guest.id, guest.nama_tamu)}
-                          style={{ padding: '0.5rem 0.75rem' }}
+                          style={{ width: '32px', height: '32px' }}
+                          title="Hapus"
                         >
-                          🗑️
+                          <Icon name="trash" size={14} />
                         </button>
                       </td>
                     </tr>
                   ))}
                 </tbody>
               </table>
-            )}
-          </div>
-          
-          {/* Pagination Controls */}
+            </div>
+          )}
+
+          {/* Pagination */}
           {totalPages > 1 && (
             <div style={{ 
               display: 'flex', 
               justifyContent: 'space-between', 
               alignItems: 'center', 
-              padding: '1.5rem', 
-              borderTop: '1px solid rgba(255,255,255,0.1)',
+              padding: 'var(--spacing-md) var(--spacing-lg)',
+              borderTop: '1px solid var(--color-divider-soft)',
               flexWrap: 'wrap',
-              gap: '1rem'
+              gap: 'var(--spacing-sm)'
             }}>
               <button
-                className="btn-secondary"
+                className="btn-pearl-capsule"
                 onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
                 disabled={currentPage === 1}
-                style={{ padding: '0.5rem 1.25rem', margin: 0, opacity: currentPage === 1 ? 0.5 : 1 }}
+                style={{ 
+                  opacity: currentPage === 1 ? 0.4 : 1,
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '6px'
+                }}
               >
-                ◀ Sebelumnya
+                <Icon name="arrowLeft" size={14} />
+                Sebelumnya
               </button>
               
-              <span style={{ color: 'rgba(255,255,255,0.8)', fontWeight: '500' }}>
+              <span className="text-caption" style={{ color: 'var(--color-ink-muted-48)' }}>
                 Halaman {currentPage} dari {totalPages}
               </span>
               
               <button
-                className="btn-secondary"
+                className="btn-pearl-capsule"
                 onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
                 disabled={currentPage === totalPages}
-                style={{ padding: '0.5rem 1.25rem', margin: 0, opacity: currentPage === totalPages ? 0.5 : 1 }}
+                style={{ 
+                  opacity: currentPage === totalPages ? 0.4 : 1,
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '6px'
+                }}
               >
-                Berikutnya ▶
+                Berikutnya
+                <Icon name="arrowRight" size={14} />
               </button>
             </div>
           )}
@@ -520,14 +768,38 @@ function Admin() {
       {showAddModal && (
         <div className="modal-overlay" onClick={() => setShowAddModal(false)}>
           <div className="modal-content" onClick={(e) => e.stopPropagation()}>
-            <h2 style={{ fontSize: '1.75rem', fontWeight: '700', marginBottom: '1.5rem', color: '#333' }}>
-              ➕ Tambah Tamu Baru
-            </h2>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 'var(--spacing-xs)' }}>
+              <div>
+                <h2 className="text-tagline" style={{ color: 'var(--color-ink)' }}>
+                  Tambah Tamu Baru
+                </h2>
+                <p className="text-caption" style={{ color: 'var(--color-ink-muted-48)', marginTop: 'var(--spacing-xxs)' }}>
+                  Isi data tamu undangan di bawah ini
+                </p>
+              </div>
+              <button
+                onClick={() => setShowAddModal(false)}
+                style={{
+                  background: 'none',
+                  border: 'none',
+                  color: 'var(--color-ink-muted-48)',
+                  cursor: 'pointer',
+                  padding: 'var(--spacing-xxs)',
+                  display: 'flex'
+                }}
+              >
+                <Icon name="x" size={20} />
+              </button>
+            </div>
 
-            <form onSubmit={addGuest}>
-              <div style={{ marginBottom: '1.5rem' }}>
-                <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: '600', color: '#333' }}>
-                  Nama Tamu *
+            <form onSubmit={addGuest} style={{ marginTop: 'var(--spacing-lg)' }}>
+              <div style={{ marginBottom: 'var(--spacing-md)' }}>
+                <label className="text-caption-strong" style={{ 
+                  display: 'block', 
+                  marginBottom: 'var(--spacing-xs)', 
+                  color: 'var(--color-ink)'
+                }}>
+                  Nama Tamu
                 </label>
                 <input
                   type="text"
@@ -539,22 +811,54 @@ function Admin() {
                 />
               </div>
 
-              <div style={{ marginBottom: '1.5rem' }}>
-                <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: '600', color: '#333' }}>
-                  Alamat *
+              <div style={{ marginBottom: 'var(--spacing-xl)' }}>
+                <label className="text-caption-strong" style={{ 
+                  display: 'block', 
+                  marginBottom: 'var(--spacing-xs)', 
+                  color: 'var(--color-ink)'
+                }}>
+                  Alamat
                 </label>
                 <textarea
-                  className="input-field"
+                  className="textarea-field"
                   value={newGuest.alamat_tamu}
                   onChange={(e) => setNewGuest({ ...newGuest, alamat_tamu: e.target.value })}
                   placeholder="Masukkan alamat"
                   rows="3"
                   required
-                  style={{ resize: 'vertical' }}
                 />
               </div>
 
-              <div style={{ display: 'flex', gap: '1rem' }}>
+              <div style={{ marginBottom: 'var(--spacing-xl)' }}>
+                <label className="text-caption-strong" style={{ 
+                  display: 'block', 
+                  marginBottom: 'var(--spacing-xs)', 
+                  color: 'var(--color-ink)'
+                }}>
+                  Tamu dari
+                </label>
+                <select
+                  className="input-field"
+                  value={newGuest.tamu_from}
+                  onChange={(e) => setNewGuest({ ...newGuest, tamu_from: e.target.value })}
+                  style={{ 
+                    appearance: 'none',
+                    backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%237a7a7a' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E")`,
+                    backgroundRepeat: 'no-repeat',
+                    backgroundPosition: 'right 14px center',
+                    paddingRight: '36px'
+                  }}
+                >
+                  <option value="">Pilih opsi</option>
+                  {configTamuDari.map((item) => (
+                    <option key={item.id} value={item.name}>
+                      {item.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div style={{ display: 'flex', gap: 'var(--spacing-sm)' }}>
                 <button
                   type="button"
                   className="btn-secondary"
@@ -576,6 +880,12 @@ function Admin() {
           </div>
         </div>
       )}
+
+      <style>{`
+        @keyframes spin {
+          to { transform: rotate(360deg); }
+        }
+      `}</style>
     </div>
   )
 }
