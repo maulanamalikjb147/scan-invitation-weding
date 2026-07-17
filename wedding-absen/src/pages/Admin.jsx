@@ -15,6 +15,15 @@ function Admin() {
   const [success, setSuccess] = useState(null)
   const [generating, setGenerating] = useState(false)
 
+  // Bulk add states
+  const [showBulkModal, setShowBulkModal] = useState(false)
+  const [selectedBulkFrom, setSelectedBulkFrom] = useState('')
+  const [bulkGuests, setBulkGuests] = useState([])
+  const [loadingTemplate, setLoadingTemplate] = useState(false)
+  const [uploadingBulk, setUploadingBulk] = useState(false)
+  const [bulkError, setBulkError] = useState(null)
+  const [uploadedFile, setUploadedFile] = useState(null)
+
   // Authentication states
   const [isLoggedIn, setIsLoggedIn] = useState(() => {
     return sessionStorage.getItem('isAdminLoggedIn') === 'true'
@@ -226,6 +235,162 @@ function Admin() {
     }
   }
 
+  const downloadTemplate = async () => {
+    try {
+      setLoadingTemplate(true)
+      const selectedVal = selectedBulkFrom || ''
+      const csvContent = `sep=;\nNama tamu;Alamat;Tamu dari\nJohn Doe;Jl. Kebon Jeruk No. 12;${selectedVal}\n`
+      const buffer = Buffer.from(csvContent, 'utf-8')
+      const fileName = 'wedding-scan/template/template.csv'
+      
+      const command = new PutObjectCommand({
+        Bucket: 'assets-devaq',
+        Key: fileName,
+        Body: buffer,
+        ContentType: 'text/csv',
+        ACL: 'public-read'
+      })
+
+      await s3Client.send(command)
+      
+      // Trigger download
+      const templateUrl = `https://nemuftsdmjzkzcygkjpg.supabase.co/storage/v1/object/public/assets-devaq/wedding-scan/template/template.csv?t=${Date.now()}`
+      const link = document.createElement('a')
+      link.href = templateUrl
+      link.setAttribute('download', 'template.csv')
+      document.body.appendChild(link)
+      link.click()
+      document.body.removeChild(link)
+      
+      setSuccess('Template berhasil diunduh!')
+      setTimeout(() => setSuccess(null), 3000)
+    } catch (err) {
+      console.error('Error generating template:', err)
+      setError('Gagal mengunduh template: ' + err.message)
+      setTimeout(() => setError(null), 5000)
+    } finally {
+      setLoadingTemplate(false)
+    }
+  }
+
+  const handleCsvUpload = (e) => {
+    const file = e.target.files[0]
+    if (!file) return
+    setUploadedFile(file)
+
+    const reader = new FileReader()
+    reader.onload = (event) => {
+      const text = event.target.result
+      try {
+        const lines = text.split(/\r?\n/)
+        const activeLines = lines.filter(line => line.trim() !== '')
+        if (activeLines.length < 2) {
+          setBulkError('File CSV kosong atau hanya berisi header.')
+          return
+        }
+
+        // Detect delimiter and determine start index for parsing data
+        let delimiter = '|'
+        let startIndex = 1
+        let firstLine = activeLines[0]
+
+        if (firstLine.startsWith('sep=')) {
+          delimiter = firstLine.substring(4).trim().charAt(0) || ';'
+          startIndex = 2
+          if (activeLines.length < 3) {
+            setBulkError('File CSV kosong atau hanya berisi header.')
+            return
+          }
+        } else {
+          if (firstLine.includes('|')) {
+            delimiter = '|'
+          } else if (firstLine.includes(',')) {
+            delimiter = ','
+          } else if (firstLine.includes(';')) {
+            delimiter = ';'
+          }
+        }
+
+        const parsedGuests = []
+        for (let i = startIndex; i < activeLines.length; i++) {
+          const columns = activeLines[i].split(delimiter).map(col => col.trim())
+          const nama_tamu = columns[0] || ''
+          const alamat_tamu = columns[1] || ''
+          let tamu_from = columns[2] || ''
+
+          if (!nama_tamu) continue
+
+          if (!tamu_from && selectedBulkFrom) {
+            tamu_from = selectedBulkFrom
+          }
+
+          parsedGuests.push({
+            nama_tamu,
+            alamat_tamu,
+            tamu_from: tamu_from || null,
+            hadir: false,
+            is_generated: false
+          })
+        }
+
+        if (parsedGuests.length === 0) {
+          setBulkError('Tidak ada tamu valid yang ditemukan di file CSV.')
+        } else {
+          setBulkGuests(parsedGuests)
+          setBulkError(null)
+        }
+      } catch (err) {
+        console.error('Error parsing CSV:', err)
+        setBulkError('Gagal memproses file CSV: ' + err.message)
+      }
+    }
+    reader.readAsText(file)
+  }
+
+  const saveBulkGuests = async () => {
+    if (bulkGuests.length === 0) return
+    setUploadingBulk(true)
+    try {
+      // Upload the bulk CSV file itself to S3 bucket
+      if (uploadedFile) {
+        const fileExtension = uploadedFile.name.split('.').pop() || 'csv'
+        // Save to /assets-devaq/wedding-scan/template/data/bulk_[timestamp].[ext]
+        const s3Key = `wedding-scan/template/data/bulk_${Date.now()}.${fileExtension}`
+        const fileBuffer = await uploadedFile.arrayBuffer()
+        
+        const uploadCommand = new PutObjectCommand({
+          Bucket: 'assets-devaq',
+          Key: s3Key,
+          Body: Buffer.from(fileBuffer),
+          ContentType: uploadedFile.type || 'text/csv',
+          ACL: 'public-read'
+        })
+        
+        await s3Client.send(uploadCommand)
+      }
+
+      // Insert guests into database
+      const { error: insertError } = await supabase
+        .from('data_tamu')
+        .insert(bulkGuests)
+
+      if (insertError) throw insertError
+
+      setSuccess(`Berhasil menambahkan ${bulkGuests.length} tamu secara bulk!`)
+      setShowBulkModal(false)
+      setBulkGuests([])
+      setSelectedBulkFrom('')
+      setUploadedFile(null)
+      await fetchGuests()
+      setTimeout(() => setSuccess(null), 4000)
+    } catch (err) {
+      console.error('Error bulk adding guests:', err)
+      setBulkError('Gagal menyimpan data tamu bulk: ' + err.message)
+    } finally {
+      setUploadingBulk(false)
+    }
+  }
+
   const deleteGuest = async (id, nama) => {
     if (!window.confirm(`Hapus tamu ${nama}?`)) return
 
@@ -412,6 +577,26 @@ function Admin() {
           >
             <Icon name="refresh" size={14} />
             Refresh
+          </button>
+          <button 
+            className="btn-pearl-capsule"
+            onClick={() => {
+              setShowBulkModal(true)
+              setSelectedBulkFrom('')
+              setBulkGuests([])
+              setUploadedFile(null)
+              setBulkError(null)
+            }}
+            style={{ 
+              fontSize: '12px', 
+              padding: '6px 12px',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '6px'
+            }}
+          >
+            <Icon name="upload" size={14} />
+            Tambah Tamu Bulk
           </button>
           <button 
             className="btn-primary"
@@ -877,6 +1062,223 @@ function Admin() {
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* Bulk Add Guest Modal */}
+      {showBulkModal && (
+        <div className="modal-overlay" onClick={() => setShowBulkModal(false)}>
+          <div className="modal-content" onClick={(e) => e.stopPropagation()} style={{ maxWidth: '600px' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 'var(--spacing-xs)' }}>
+              <div>
+                <h2 className="text-tagline" style={{ color: 'var(--color-ink)' }}>
+                  Tambah Tamu Bulk (CSV)
+                </h2>
+                <p className="text-caption" style={{ color: 'var(--color-ink-muted-48)', marginTop: 'var(--spacing-xxs)' }}>
+                  Unggah file CSV dengan delimiter titik koma (;), koma (,), atau pipa (|)
+                </p>
+              </div>
+              <button
+                onClick={() => setShowBulkModal(false)}
+                style={{
+                  background: 'none',
+                  border: 'none',
+                  color: 'var(--color-ink-muted-48)',
+                  cursor: 'pointer',
+                  padding: 'var(--spacing-xxs)',
+                  display: 'flex'
+                }}
+              >
+                <Icon name="x" size={20} />
+              </button>
+            </div>
+
+            <div style={{ marginTop: 'var(--spacing-lg)' }}>
+              {/* Dropdown config_tamu_dari */}
+              <div style={{ marginBottom: 'var(--spacing-md)' }}>
+                <label className="text-caption-strong" style={{ 
+                  display: 'block', 
+                  marginBottom: 'var(--spacing-xs)', 
+                  color: 'var(--color-ink)'
+                }}>
+                  Tamu dari (Default Dropdown)
+                </label>
+                <select
+                  className="input-field"
+                  value={selectedBulkFrom}
+                  onChange={(e) => setSelectedBulkFrom(e.target.value)}
+                  style={{ 
+                    appearance: 'none',
+                    backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%237a7a7a' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E")`,
+                    backgroundRepeat: 'no-repeat',
+                    backgroundPosition: 'right 14px center',
+                    paddingRight: '36px'
+                  }}
+                >
+                  <option value="">Pilih opsi default</option>
+                  {configTamuDari.map((item) => (
+                    <option key={item.id} value={item.name}>
+                      {item.name}
+                    </option>
+                  ))}
+                </select>
+                <span className="text-fine-print" style={{ color: 'var(--color-ink-muted-48)', marginTop: '4px', display: 'block' }}>
+                  Jika kolom "Tamu dari" di CSV kosong, nilai ini akan digunakan sebagai default.
+                </span>
+              </div>
+
+              {/* Template Download / Action Group */}
+              <div style={{ 
+                display: 'flex', 
+                gap: 'var(--spacing-sm)', 
+                marginBottom: 'var(--spacing-lg)',
+                padding: 'var(--spacing-md)',
+                backgroundColor: 'var(--color-canvas-parchment)',
+                borderRadius: 'var(--rounded-md)',
+                alignItems: 'center',
+                justifyContent: 'space-between'
+              }}>
+                <div>
+                  <span className="text-caption-strong" style={{ display: 'block', color: 'var(--color-ink)' }}>
+                    Template CSV
+                  </span>
+                  <span className="text-fine-print" style={{ color: 'var(--color-ink-muted-48)' }}>
+                    Unduh file template CSV yang sudah terformat.
+                  </span>
+                </div>
+                <button
+                  type="button"
+                  className="btn-pearl-capsule"
+                  onClick={downloadTemplate}
+                  disabled={loadingTemplate}
+                  style={{ 
+                    fontSize: '12px',
+                    padding: '8px 14px',
+                    backgroundColor: 'var(--color-canvas)',
+                    border: '1px solid var(--color-hairline)'
+                  }}
+                >
+                  <Icon name="download" size={14} style={{ marginRight: '6px' }} />
+                  {loadingTemplate ? 'Memproses...' : 'Unduh Template'}
+                </button>
+              </div>
+
+              {/* File Input */}
+              <div style={{ marginBottom: 'var(--spacing-xl)' }}>
+                <label className="text-caption-strong" style={{ 
+                  display: 'block', 
+                  marginBottom: 'var(--spacing-xs)', 
+                  color: 'var(--color-ink)'
+                }}>
+                  Pilih File CSV
+                </label>
+                <div style={{
+                  position: 'relative',
+                  width: '100%',
+                  height: '80px',
+                  border: '2px dashed var(--color-hairline)',
+                  borderRadius: 'var(--rounded-md)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  cursor: 'pointer',
+                  backgroundColor: 'var(--color-surface-pearl)',
+                  transition: 'border-color 0.2s'
+                }}>
+                  <input
+                    type="file"
+                    accept=".csv"
+                    onChange={handleCsvUpload}
+                    style={{
+                      position: 'absolute',
+                      width: '100%',
+                      height: '100%',
+                      opacity: 0,
+                      cursor: 'pointer'
+                    }}
+                  />
+                  <div style={{ textAlign: 'center', pointerEvents: 'none' }}>
+                    <Icon name="upload" size={24} style={{ color: 'var(--color-primary)', marginBottom: '4px' }} />
+                    <span className="text-caption" style={{ display: 'block', color: 'var(--color-ink-muted-80)' }}>
+                      Klik untuk memilih file CSV
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Bulk Error */}
+              {bulkError && (
+                <div className="toast toast-error" style={{ display: 'flex', alignItems: 'center', gap: 'var(--spacing-xs)', marginBottom: 'var(--spacing-md)' }}>
+                  <Icon name="alertCircle" size={16} />
+                  {bulkError}
+                </div>
+              )}
+
+              {/* Preview parsed guests */}
+              {bulkGuests.length > 0 && (
+                <div style={{ marginBottom: 'var(--spacing-xl)' }}>
+                  <label className="text-caption-strong" style={{ 
+                    display: 'block', 
+                    marginBottom: 'var(--spacing-xs)', 
+                    color: 'var(--color-ink)'
+                  }}>
+                    Preview Tamu ({bulkGuests.length} ditemukan)
+                  </label>
+                  <div style={{ 
+                    maxHeight: '200px', 
+                    overflowY: 'auto',
+                    border: '1px solid var(--color-hairline)',
+                    borderRadius: 'var(--rounded-md)',
+                    backgroundColor: 'var(--color-surface-pearl)'
+                  }}>
+                    <table style={{ fontSize: '12px' }}>
+                      <thead>
+                        <tr>
+                          <th style={{ padding: '6px 12px' }}>Nama</th>
+                          <th style={{ padding: '6px 12px' }}>Alamat</th>
+                          <th style={{ padding: '6px 12px' }}>Dari</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {bulkGuests.map((bg, idx) => (
+                          <tr key={idx}>
+                            <td style={{ padding: '6px 12px', fontWeight: 600 }}>{bg.nama_tamu}</td>
+                            <td style={{ padding: '6px 12px', color: 'var(--color-ink-muted-80)' }}>{bg.alamat_tamu}</td>
+                            <td style={{ padding: '6px 12px' }}>
+                              <span className="badge badge-success" style={{ fontSize: '10px', padding: '2px 8px' }}>
+                                {bg.tamu_from || '-'}
+                              </span>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              )}
+
+              {/* Action Buttons */}
+              <div style={{ display: 'flex', gap: 'var(--spacing-sm)' }}>
+                <button
+                  type="button"
+                  className="btn-secondary"
+                  onClick={() => setShowBulkModal(false)}
+                  style={{ flex: 1 }}
+                >
+                  Batal
+                </button>
+                <button
+                  type="button"
+                  className="btn-primary"
+                  onClick={saveBulkGuests}
+                  disabled={bulkGuests.length === 0 || uploadingBulk}
+                  style={{ flex: 1 }}
+                >
+                  {uploadingBulk ? 'Menyimpan...' : `Simpan (${bulkGuests.length} Tamu)`}
+                </button>
+              </div>
+            </div>
           </div>
         </div>
       )}
