@@ -868,7 +868,7 @@ function Admin() {
                     <th>Nama Tamu</th>
                     <th>Alamat</th>
                     <th style={{ width: '120px' }}>Tamu dari</th>
-                    <th style={{ width: '100px' }}>Status</th>
+                    <th style={{ width: '128px' }}>Status</th>
                     <th style={{ width: '140px' }}>Check-in</th>
                     <th style={{ width: '80px' }}>QR</th>
                     <th style={{ width: '60px' }}></th>
@@ -893,13 +893,8 @@ function Admin() {
                           {guest.tamu_from || '-'}
                         </td>
                         <td>
-                          <span className={`badge ${attendance.badgeClass}`}>
-                            {attendance.label}
-                          </span>
-                        </td>
-                        <td>
                           <select
-                            className={`checkin-select checkin-select-${attendance.value || 'empty'}`}
+                            className={`status-select ${attendance.badgeClass}`}
                             value={attendance.value}
                             onChange={(e) => updateManualCheckIn(guest, e.target.value)}
                             aria-label={`Ubah status check-in ${guest.nama_tamu}`}
@@ -908,10 +903,10 @@ function Admin() {
                             <option value="hadir">Hadir</option>
                             <option value="tidak_hadir">Tidak Hadir</option>
                           </select>
-                          <div className="text-caption" style={{ color: 'var(--color-ink-muted-48)', marginTop: 'var(--spacing-xxs)' }}>
-                            {formatDate(guest.checkin)}
-                            {guest.signed_by ? ` | ${guest.signed_by}` : ''}
-                          </div>
+                        </td>
+                        <td className="text-caption" style={{ color: 'var(--color-ink-muted-48)' }}>
+                          {formatDate(guest.checkin)}
+                          {guest.signed_by ? ` | ${guest.signed_by}` : ''}
                         </td>
                         <td>
                           {guest.is_generated ? (
