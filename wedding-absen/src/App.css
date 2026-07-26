@@ -515,6 +515,54 @@ tbody td {
   color: #856404;
 }
 
+.badge-danger {
+  background-color: #ffe5e5;
+  color: #b42318;
+}
+
+.checkin-select {
+  width: 118px;
+  min-height: 32px;
+  border: 1px solid var(--color-hairline);
+  border-radius: var(--rounded-sm);
+  padding: 6px 30px 6px 10px;
+  font-family: var(--font-body);
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 1.2;
+  color: var(--color-ink);
+  background-color: var(--color-canvas);
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%237a7a7a' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 10px center;
+  appearance: none;
+  cursor: pointer;
+}
+
+.checkin-select:focus {
+  outline: none;
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 3px rgba(0, 102, 204, 0.12);
+}
+
+.checkin-select-hadir {
+  color: #155724;
+  border-color: rgba(21, 87, 36, 0.24);
+  background-color: #f1fbf3;
+}
+
+.checkin-select-tidak_hadir {
+  color: #b42318;
+  border-color: rgba(180, 35, 24, 0.22);
+  background-color: #fff5f5;
+}
+
+.checkin-select-empty {
+  color: #856404;
+  border-color: rgba(133, 100, 4, 0.22);
+  background-color: #fffaf0;
+}
+
 /* ===== QR Image ===== */
 .qr-image {
   width: 48px;

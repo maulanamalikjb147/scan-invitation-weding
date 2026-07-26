@@ -72,7 +72,8 @@ function Scanner() {
         .from('data_tamu')
         .update({ 
           hadir: true, 
-          checkin: new Date().toISOString() 
+          checkin: new Date().toISOString(),
+          signed_by: 'USER'
         })
         .eq('id', id)
 

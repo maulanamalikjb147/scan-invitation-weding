@@ -206,8 +206,9 @@ function Admin() {
           nama_tamu: newGuest.nama_tamu,
           alamat_tamu: newGuest.alamat_tamu,
           tamu_from: newGuest.tamu_from || null,
-          hadir: false,
-          is_generated: false
+          hadir: null,
+          is_generated: false,
+          signed_by: null
         }])
 
       if (error) throw error
@@ -224,6 +225,50 @@ function Admin() {
     } finally {
       setLoading(false)
     }
+  }
+
+  const updateManualCheckIn = async (guest, status) => {
+    const nextCheckIn = status === 'hadir'
+    const payload = {
+      hadir: status === '' ? null : nextCheckIn,
+      checkin: nextCheckIn ? new Date().toISOString() : null,
+      signed_by: status === '' ? null : 'ADMIN'
+    }
+
+    const previousGuests = guests
+    setGuests(currentGuests => currentGuests.map(item => (
+      item.id === guest.id ? { ...item, ...payload } : item
+    )))
+
+    try {
+      const { error: updateError } = await supabase
+        .from('data_tamu')
+        .update(payload)
+        .eq('id', guest.id)
+
+      if (updateError) throw updateError
+
+      const statusLabel = status === 'hadir' ? 'Hadir' : status === 'tidak_hadir' ? 'Tidak hadir' : 'Belum ditentukan'
+      setSuccess(`${guest.nama_tamu} diubah menjadi ${statusLabel}`)
+      setTimeout(() => setSuccess(null), 3000)
+    } catch (err) {
+      console.error('Error updating manual check-in:', err)
+      setGuests(previousGuests)
+      setError('Gagal mengubah status check-in: ' + err.message)
+      setTimeout(() => setError(null), 5000)
+    }
+  }
+
+  const getAttendanceStatus = (guest) => {
+    if (guest.hadir === true) {
+      return { value: 'hadir', label: 'Hadir', badgeClass: 'badge-success' }
+    }
+
+    if (guest.hadir === false) {
+      return { value: 'tidak_hadir', label: 'Tidak Hadir', badgeClass: 'badge-danger' }
+    }
+
+    return { value: '', label: 'Belum', badgeClass: 'badge-pending' }
   }
 
   const deleteGuest = async (id, nama) => {
@@ -645,71 +690,88 @@ function Admin() {
                   </tr>
                 </thead>
                 <tbody>
-                  {paginatedGuests.map((guest, index) => (
-                    <tr key={guest.id}>
-                      <td className="text-caption" style={{ color: 'var(--color-ink-muted-48)' }}>
-                        {startIndex + index + 1}
-                      </td>
-                      <td>
-                        <span className="text-body-strong">{guest.nama_tamu}</span>
-                      </td>
-                      <td className="text-caption">
-                        {guest.alamat_tamu}
-                      </td>
-                      <td className="text-caption">
-                        {guest.tamu_from || '-'}
-                      </td>
-                      <td>
-                        <span className={`badge ${guest.hadir ? 'badge-success' : 'badge-pending'}`}>
-                          {guest.hadir ? 'Hadir' : 'Belum'}
-                        </span>
-                      </td>
-                      <td className="text-caption" style={{ color: 'var(--color-ink-muted-48)' }}>
-                        {formatDate(guest.checkin)}
-                      </td>
-                      <td>
-                        {guest.is_generated ? (
-                          <a
-                            href={getQRCodeUrl(guest.id, guest.is_generated)}
-                            target="_blank"
-                            rel="noopener noreferrer"
+                  {paginatedGuests.map((guest, index) => {
+                    const attendance = getAttendanceStatus(guest)
+
+                    return (
+                      <tr key={guest.id}>
+                        <td className="text-caption" style={{ color: 'var(--color-ink-muted-48)' }}>
+                          {startIndex + index + 1}
+                        </td>
+                        <td>
+                          <span className="text-body-strong">{guest.nama_tamu}</span>
+                        </td>
+                        <td className="text-caption">
+                          {guest.alamat_tamu}
+                        </td>
+                        <td className="text-caption">
+                          {guest.tamu_from || '-'}
+                        </td>
+                        <td>
+                          <span className={`badge ${attendance.badgeClass}`}>
+                            {attendance.label}
+                          </span>
+                        </td>
+                        <td>
+                          <select
+                            className={`checkin-select checkin-select-${attendance.value || 'empty'}`}
+                            value={attendance.value}
+                            onChange={(e) => updateManualCheckIn(guest, e.target.value)}
+                            aria-label={`Ubah status check-in ${guest.nama_tamu}`}
                           >
-                            <img
-                              src={getQRCodeUrl(guest.id, guest.is_generated)}
-                              alt="QR Code"
-                              className="qr-image"
-                            />
-                          </a>
-                        ) : (
+                            <option value="">-</option>
+                            <option value="hadir">Hadir</option>
+                            <option value="tidak_hadir">Tidak Hadir</option>
+                          </select>
+                          <div className="text-caption" style={{ color: 'var(--color-ink-muted-48)', marginTop: 'var(--spacing-xxs)' }}>
+                            {formatDate(guest.checkin)}
+                            {guest.signed_by ? ` | ${guest.signed_by}` : ''}
+                          </div>
+                        </td>
+                        <td>
+                          {guest.is_generated ? (
+                            <a
+                              href={getQRCodeUrl(guest.id, guest.is_generated)}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                            >
+                              <img
+                                src={getQRCodeUrl(guest.id, guest.is_generated)}
+                                alt="QR Code"
+                                className="qr-image"
+                              />
+                            </a>
+                          ) : (
+                            <button
+                              className="btn-pearl-capsule"
+                              onClick={() => generateQRCode(guest)}
+                              disabled={generating}
+                              style={{ 
+                                fontSize: '12px', 
+                                padding: '4px 10px',
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: '4px'
+                              }}
+                            >
+                              <Icon name="qrCode" size={12} />
+                              Generate
+                            </button>
+                          )}
+                        </td>
+                        <td>
                           <button
-                            className="btn-pearl-capsule"
-                            onClick={() => generateQRCode(guest)}
-                            disabled={generating}
-                            style={{ 
-                              fontSize: '12px', 
-                              padding: '4px 10px',
-                              display: 'flex',
-                              alignItems: 'center',
-                              gap: '4px'
-                            }}
+                            className="btn-icon-circular"
+                            onClick={() => deleteGuest(guest.id, guest.nama_tamu)}
+                            style={{ width: '32px', height: '32px' }}
+                            title="Hapus"
                           >
-                            <Icon name="qrCode" size={12} />
-                            Generate
+                            <Icon name="trash" size={14} />
                           </button>
-                        )}
-                      </td>
-                      <td>
-                        <button
-                          className="btn-icon-circular"
-                          onClick={() => deleteGuest(guest.id, guest.nama_tamu)}
-                          style={{ width: '32px', height: '32px' }}
-                          title="Hapus"
-                        >
-                          <Icon name="trash" size={14} />
-                        </button>
-                      </td>
-                    </tr>
-                  ))}
+                        </td>
+                      </tr>
+                    )
+                  })}
                 </tbody>
               </table>
             </div>
