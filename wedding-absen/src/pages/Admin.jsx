@@ -359,6 +359,8 @@ function Admin() {
         }
 
         const normalizeHeader = (value) => value.toLowerCase().replace(/[^a-z0-9]/g, '')
+        const normalizeContactNumber = (value) => value.replace(/[^\d]/g, '')
+        const looksLikeContactNumber = (value) => /^62\d{7,15}$/.test(normalizeContactNumber(value))
         const headerColumns = activeLines[startIndex - 1].split(delimiter).map(col => normalizeHeader(col.trim()))
         const indexOfHeader = (...names) => {
           const normalizedNames = names.map(normalizeHeader)
@@ -367,7 +369,7 @@ function Admin() {
 
         const nameIndex = indexOfHeader('Nama tamu', 'Nama Tamu', 'nama_tamu', 'Nama')
         const addressIndex = indexOfHeader('Alamat', 'alamat_tamu')
-        const contactIndex = indexOfHeader('Contact Number', 'Nomor Kontak', 'No HP', 'No Handphone', 'Telepon', 'Phone')
+        const contactIndex = indexOfHeader('Contact Number', 'Concat Number', 'Contact', 'Nomor Kontak', 'No HP', 'No Handphone', 'Telepon', 'Phone')
         const fromIndex = indexOfHeader('Tamu dari', 'tamu_from', 'Dari')
 
         const parsedGuests = []
@@ -375,7 +377,15 @@ function Admin() {
           const columns = activeLines[i].split(delimiter).map(col => col.trim())
           const nama_tamu = columns[nameIndex >= 0 ? nameIndex : 0] || ''
           const alamat_tamu = columns[addressIndex >= 0 ? addressIndex : 1] || ''
-          const contact_number = columns[contactIndex >= 0 ? contactIndex : 2] || ''
+          const contactColumnIndex = contactIndex >= 0
+            ? contactIndex
+            : columns.findIndex((col, colIndex) => (
+              colIndex !== nameIndex &&
+              colIndex !== addressIndex &&
+              colIndex !== fromIndex &&
+              looksLikeContactNumber(col)
+            ))
+          const contact_number = contactColumnIndex >= 0 ? normalizeContactNumber(columns[contactColumnIndex]) : ''
           let tamu_from = columns[fromIndex >= 0 ? fromIndex : 3] || ''
 
           if (!nama_tamu) continue
