@@ -9,7 +9,7 @@ function Admin() {
   const [guests, setGuests] = useState([])
   const [configTamuDari, setConfigTamuDari] = useState([])
   const [showAddModal, setShowAddModal] = useState(false)
-  const [newGuest, setNewGuest] = useState({ nama_tamu: '', alamat_tamu: '', tamu_from: '' })
+  const [newGuest, setNewGuest] = useState({ nama_tamu: '', alamat_tamu: '', contact_number: '', tamu_from: '' })
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState(null)
   const [success, setSuccess] = useState(null)
@@ -62,9 +62,10 @@ function Admin() {
   const filteredGuests = guests.filter(guest => {
     const name = guest.nama_tamu?.toLowerCase() || ''
     const address = guest.alamat_tamu?.toLowerCase() || ''
+    const contactNumber = guest.contact_number?.toLowerCase() || ''
     const from = guest.tamu_from?.toLowerCase() || ''
     const query = searchQuery.toLowerCase()
-    return name.includes(query) || address.includes(query) || from.includes(query)
+    return name.includes(query) || address.includes(query) || contactNumber.includes(query) || from.includes(query)
   })
 
   // Calculate pagination details
@@ -214,6 +215,7 @@ function Admin() {
         .insert([{
           nama_tamu: newGuest.nama_tamu,
           alamat_tamu: newGuest.alamat_tamu,
+          contact_number: newGuest.contact_number || null,
           tamu_from: newGuest.tamu_from || null,
           hadir: null,
           is_generated: false,
@@ -222,7 +224,7 @@ function Admin() {
 
       if (error) throw error
 
-      setNewGuest({ nama_tamu: '', alamat_tamu: '', tamu_from: '' })
+      setNewGuest({ nama_tamu: '', alamat_tamu: '', contact_number: '', tamu_from: '' })
       setShowAddModal(false)
       setSuccess('Tamu berhasil ditambahkan!')
       await fetchGuests()
@@ -284,7 +286,7 @@ function Admin() {
     try {
       setLoadingTemplate(true)
       const selectedVal = selectedBulkFrom || ''
-      const csvContent = `sep=;\nNama tamu;Alamat;Tamu dari\nJohn Doe;Jl. Kebon Jeruk No. 12;${selectedVal}\n`
+      const csvContent = `sep=;\nNama tamu;Alamat;Contact Number;Tamu dari\nJohn Doe;Jl. Kebon Jeruk No. 12;081234567890;${selectedVal}\n`
       const buffer = Buffer.from(csvContent, 'utf-8')
       const fileName = 'wedding-scan/template/template.csv'
 
@@ -356,12 +358,25 @@ function Admin() {
           }
         }
 
+        const normalizeHeader = (value) => value.toLowerCase().replace(/[^a-z0-9]/g, '')
+        const headerColumns = activeLines[startIndex - 1].split(delimiter).map(col => normalizeHeader(col.trim()))
+        const indexOfHeader = (...names) => {
+          const normalizedNames = names.map(normalizeHeader)
+          return headerColumns.findIndex(header => normalizedNames.includes(header))
+        }
+
+        const nameIndex = indexOfHeader('Nama tamu', 'Nama Tamu', 'nama_tamu', 'Nama')
+        const addressIndex = indexOfHeader('Alamat', 'alamat_tamu')
+        const contactIndex = indexOfHeader('Contact Number', 'Nomor Kontak', 'No HP', 'No Handphone', 'Telepon', 'Phone')
+        const fromIndex = indexOfHeader('Tamu dari', 'tamu_from', 'Dari')
+
         const parsedGuests = []
         for (let i = startIndex; i < activeLines.length; i++) {
           const columns = activeLines[i].split(delimiter).map(col => col.trim())
-          const nama_tamu = columns[0] || ''
-          const alamat_tamu = columns[1] || ''
-          let tamu_from = columns[2] || ''
+          const nama_tamu = columns[nameIndex >= 0 ? nameIndex : 0] || ''
+          const alamat_tamu = columns[addressIndex >= 0 ? addressIndex : 1] || ''
+          const contact_number = columns[contactIndex >= 0 ? contactIndex : 2] || ''
+          let tamu_from = columns[fromIndex >= 0 ? fromIndex : 3] || ''
 
           if (!nama_tamu) continue
 
@@ -372,9 +387,11 @@ function Admin() {
           parsedGuests.push({
             nama_tamu,
             alamat_tamu,
+            contact_number: contact_number || null,
             tamu_from: tamu_from || null,
-            hadir: false,
-            is_generated: false
+            hadir: null,
+            is_generated: false,
+            signed_by: null
           })
         }
 
@@ -754,7 +771,7 @@ function Admin() {
                 className="input-field"
                 value={searchQuery}
                 onChange={handleSearchChange}
-                placeholder="Cari nama tamu atau alamat..."
+                placeholder="Cari nama tamu, alamat, atau nomor kontak..."
                 style={{ paddingLeft: '40px' }}
               />
               <span style={{
@@ -867,6 +884,7 @@ function Admin() {
                     <th style={{ width: '48px' }}>No</th>
                     <th>Nama Tamu</th>
                     <th>Alamat</th>
+                    <th style={{ width: '150px' }}>Contact Number</th>
                     <th style={{ width: '120px' }}>Tamu dari</th>
                     <th style={{ width: '128px' }}>Status</th>
                     <th style={{ width: '140px' }}>Check-in</th>
@@ -888,6 +906,9 @@ function Admin() {
                         </td>
                         <td className="text-caption">
                           {guest.alamat_tamu}
+                        </td>
+                        <td className="text-caption">
+                          {guest.contact_number || '-'}
                         </td>
                         <td className="text-caption">
                           {guest.tamu_from || '-'}
@@ -1068,6 +1089,23 @@ function Admin() {
                   placeholder="Masukkan alamat"
                   rows="3"
                   required
+                />
+              </div>
+
+              <div style={{ marginBottom: 'var(--spacing-xl)' }}>
+                <label className="text-caption-strong" style={{
+                  display: 'block',
+                  marginBottom: 'var(--spacing-xs)',
+                  color: 'var(--color-ink)'
+                }}>
+                  Contact Number
+                </label>
+                <input
+                  type="tel"
+                  className="input-field"
+                  value={newGuest.contact_number}
+                  onChange={(e) => setNewGuest({ ...newGuest, contact_number: e.target.value })}
+                  placeholder="Masukkan nomor kontak"
                 />
               </div>
 
@@ -1294,6 +1332,7 @@ function Admin() {
                         <tr>
                           <th style={{ padding: '6px 12px' }}>Nama</th>
                           <th style={{ padding: '6px 12px' }}>Alamat</th>
+                          <th style={{ padding: '6px 12px' }}>Contact Number</th>
                           <th style={{ padding: '6px 12px' }}>Dari</th>
                         </tr>
                       </thead>
@@ -1302,6 +1341,7 @@ function Admin() {
                           <tr key={idx}>
                             <td style={{ padding: '6px 12px', fontWeight: 600 }}>{bg.nama_tamu}</td>
                             <td style={{ padding: '6px 12px', color: 'var(--color-ink-muted-80)' }}>{bg.alamat_tamu}</td>
+                            <td style={{ padding: '6px 12px', color: 'var(--color-ink-muted-80)' }}>{bg.contact_number || '-'}</td>
                             <td style={{ padding: '6px 12px' }}>
                               <span className="badge badge-success" style={{ fontSize: '10px', padding: '2px 8px' }}>
                                 {bg.tamu_from || '-'}

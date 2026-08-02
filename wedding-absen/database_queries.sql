@@ -5,6 +5,9 @@
 ALTER TABLE data_tamu
 ADD COLUMN IF NOT EXISTS signed_by TEXT CHECK (signed_by IN ('USER', 'ADMIN'));
 
+ALTER TABLE data_tamu
+ADD COLUMN IF NOT EXISTS contact_number TEXT;
+
 -- 1. Verify table exists and check structure
 SELECT column_name, data_type, is_nullable
 FROM information_schema.columns
@@ -12,7 +15,7 @@ WHERE table_name = 'data_tamu'
 ORDER BY ordinal_position;
 
 -- 2. Check current data
-SELECT id, nama_tamu, alamat_tamu, hadir, signed_by, is_generated, checkin, created_at
+SELECT id, nama_tamu, alamat_tamu, contact_number, hadir, signed_by, is_generated, checkin, created_at
 FROM data_tamu
 ORDER BY created_at DESC;
 
