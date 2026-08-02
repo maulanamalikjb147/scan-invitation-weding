@@ -286,7 +286,7 @@ function Admin() {
     try {
       setLoadingTemplate(true)
       const selectedVal = selectedBulkFrom || ''
-      const csvContent = `sep=;\nNama tamu;Alamat;Contact Number;Tamu dari\nJohn Doe;Jl. Kebon Jeruk No. 12;081234567890;${selectedVal}\n`
+      const csvContent = `sep=;\nNama tamu;Alamat;Contact Number;Tamu dari\nJohn Doe;Jl. Kebon Jeruk No. 12;6281234567890;${selectedVal}\n`
       const buffer = Buffer.from(csvContent, 'utf-8')
       const fileName = 'wedding-scan/template/template.csv'
 
@@ -1105,8 +1105,11 @@ function Admin() {
                   className="input-field"
                   value={newGuest.contact_number}
                   onChange={(e) => setNewGuest({ ...newGuest, contact_number: e.target.value })}
-                  placeholder="Masukkan nomor kontak"
+                  placeholder="Contoh: 6281234567890"
                 />
+                <span className="text-fine-print" style={{ color: 'var(--color-ink-muted-48)', marginTop: '4px', display: 'block' }}>
+                  Gunakan format 62, tanpa angka 0 di depan atau tanda +.
+                </span>
               </div>
 
               <div style={{ marginBottom: 'var(--spacing-xl)' }}>
@@ -1239,7 +1242,7 @@ function Admin() {
                     Template CSV
                   </span>
                   <span className="text-fine-print" style={{ color: 'var(--color-ink-muted-48)' }}>
-                    Unduh file template CSV yang sudah terformat.
+                    Unduh file template CSV yang sudah terformat. Contact Number gunakan format 62.
                   </span>
                 </div>
                 <button
