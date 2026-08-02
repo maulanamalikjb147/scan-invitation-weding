@@ -18,6 +18,8 @@ dist-ssr
 .env.development
 .env.production
 .env.test
+supabase/functions/.env
+supabase/.temp/
 
 # Editor directories and files
 .vscode/*

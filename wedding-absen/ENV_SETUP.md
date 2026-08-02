@@ -7,8 +7,9 @@
 cp .env.example .env
 ```
 
-### 2. File .env sudah berisi credentials yang benar
-File `.env.example` sudah berisi semua credentials yang diperlukan. Anda tinggal copy saja!
+### 2. Isi konfigurasi publik
+Isi URL Supabase dan publishable key. Secret OpenWA dan service-role hanya boleh
+disimpan sebagai Supabase Edge Function secrets; lihat `OPENWA_SETUP.md`.
 
 ---
 
@@ -16,31 +17,16 @@ File `.env.example` sudah berisi semua credentials yang diperlukan. Anda tinggal
 
 ### Supabase Configuration
 ```env
-VITE_SUPABASE_URL=https://nemuftsdmjzkzcygkjpg.supabase.co
-VITE_SUPABASE_PUBLISHABLE_KEY=sb_publishable_GsJ39jiTlNvyBG69MNxrAQ_kJQu0Cmp
+VITE_SUPABASE_URL=https://your-project-id.supabase.co
+VITE_SUPABASE_PUBLISHABLE_KEY=your-anon-publishable-key
 ```
 - **VITE_SUPABASE_URL**: URL Supabase project Anda
 - **VITE_SUPABASE_PUBLISHABLE_KEY**: Public anon key untuk akses database
 
-### Supabase Storage (S3)
-```env
-VITE_SUPABASE_STORAGE_ENDPOINT=https://nemuftsdmjzkzcygkjpg.storage.supabase.co/storage/v1/s3
-VITE_S3_ACCESS_KEY_ID=010b30cde558f2e988cad663b4de2e93
-VITE_S3_SECRET_ACCESS_KEY=ef9e4b8b6ad47b7a4d3388f5e6f898dc51cb98c2a20baaaddc7520d8f73194d7
-VITE_S3_REGION=ap-northeast-1
-```
-- **VITE_SUPABASE_STORAGE_ENDPOINT**: Endpoint S3 untuk upload QR codes
-- **VITE_S3_ACCESS_KEY_ID**: Access key untuk S3
-- **VITE_S3_SECRET_ACCESS_KEY**: Secret key untuk S3
-- **VITE_S3_REGION**: Region S3 (ap-northeast-1)
-
-### Admin Credentials
-```env
-VITE_ADMIN_USERNAME=admin
-VITE_ADMIN_PASSWORD=@R00tsys147
-```
-- **VITE_ADMIN_USERNAME**: Username untuk login admin panel
-- **VITE_ADMIN_PASSWORD**: Password untuk login admin panel
+### Storage dan login admin
+Upload QR memakai Supabase Storage SDK dengan session user terautentikasi. Login
+admin memakai Supabase Auth. Jangan menambahkan S3 key atau password admin ke
+variabel `VITE_*` karena nilainya akan terlihat di browser.
 
 ---
 
@@ -52,7 +38,7 @@ Jika Anda perlu akses database secara langsung via psql:
 psql -h db.nemuftsdmjzkzcygkjpg.supabase.co -p 5432 -d postgres -U postgres
 ```
 
-**Password**: `Y6J.#hFQ.hy5frP`
+**Password**: gunakan password database dari Supabase Dashboard.
 
 ### Useful SQL Queries
 

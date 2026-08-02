@@ -1,9 +1,12 @@
 import { useState, useEffect } from 'react'
+import { Link } from 'react-router-dom'
 import { supabase } from '../supabaseClient'
 import QRCode from 'qrcode'
-import { S3Client, PutObjectCommand } from '@aws-sdk/client-s3'
-import { Buffer } from 'buffer'
 import Icon from '../components/Icon'
+
+const QR_BUCKET = 'assets-devaq'
+const QR_PREFIX = 'wedding-scan'
+const searchableText = (value) => String(value ?? '').toLowerCase()
 
 function Admin() {
   const [guests, setGuests] = useState([])
@@ -14,6 +17,8 @@ function Admin() {
   const [error, setError] = useState(null)
   const [success, setSuccess] = useState(null)
   const [generating, setGenerating] = useState(false)
+  const [sendingInvitationIds, setSendingInvitationIds] = useState(() => new Set())
+  const [invitationTemplates, setInvitationTemplates] = useState({})
 
   // Bulk add states
   const [showBulkModal, setShowBulkModal] = useState(false)
@@ -25,31 +30,35 @@ function Admin() {
   const [uploadedFile, setUploadedFile] = useState(null)
 
   // Authentication states
-  const [isLoggedIn, setIsLoggedIn] = useState(() => {
-    return sessionStorage.getItem('isAdminLoggedIn') === 'true'
-  })
-  const [usernameInput, setUsernameInput] = useState('')
+  const [isLoggedIn, setIsLoggedIn] = useState(false)
+  const [checkingAuth, setCheckingAuth] = useState(true)
+  const [authenticating, setAuthenticating] = useState(false)
+  const [emailInput, setEmailInput] = useState('')
   const [passwordInput, setPasswordInput] = useState('')
   const [loginError, setLoginError] = useState(null)
 
-  const handleLogin = (e) => {
+  const handleLogin = async (e) => {
     e.preventDefault()
-    const configUsername = window.env?.VITE_ADMIN_USERNAME || import.meta.env.VITE_ADMIN_USERNAME
-    const configPassword = window.env?.VITE_ADMIN_PASSWORD || import.meta.env.VITE_ADMIN_PASSWORD
+    setAuthenticating(true)
+    try {
+      const { error: signInError } = await supabase.auth.signInWithPassword({
+        email: emailInput.trim(),
+        password: passwordInput
+      })
 
-    if (usernameInput === configUsername && passwordInput === configPassword) {
-      setIsLoggedIn(true)
-      sessionStorage.setItem('isAdminLoggedIn', 'true')
+      if (signInError) throw signInError
       setLoginError(null)
-    } else {
-      setLoginError('Username atau password salah!')
+    } catch (err) {
+      console.error('Admin login failed:', err)
+      setLoginError('Email atau password salah!')
+    } finally {
+      setAuthenticating(false)
     }
   }
 
-  const handleLogout = () => {
-    setIsLoggedIn(false)
-    sessionStorage.removeItem('isAdminLoggedIn')
-    setUsernameInput('')
+  const handleLogout = async () => {
+    await supabase.auth.signOut()
+    setEmailInput('')
     setPasswordInput('')
   }
 
@@ -60,11 +69,11 @@ function Admin() {
 
   // Filter guests based on search query
   const filteredGuests = guests.filter(guest => {
-    const name = guest.nama_tamu?.toLowerCase() || ''
-    const address = guest.alamat_tamu?.toLowerCase() || ''
-    const contactNumber = guest.contact_number?.toLowerCase() || ''
-    const from = guest.tamu_from?.toLowerCase() || ''
-    const query = searchQuery.toLowerCase()
+    const name = searchableText(guest.nama_tamu)
+    const address = searchableText(guest.alamat_tamu)
+    const contactNumber = searchableText(guest.contact_number)
+    const from = searchableText(guest.tamu_from)
+    const query = searchableText(searchQuery)
     return name.includes(query) || address.includes(query) || contactNumber.includes(query) || from.includes(query)
   })
 
@@ -79,19 +88,8 @@ function Admin() {
     setCurrentPage(1)
   }
 
-  // Initialize S3 client
-  const s3Client = new S3Client({
-    endpoint: window.env?.VITE_SUPABASE_STORAGE_ENDPOINT || import.meta.env.VITE_SUPABASE_STORAGE_ENDPOINT,
-    region: window.env?.VITE_S3_REGION || import.meta.env.VITE_S3_REGION,
-    credentials: {
-      accessKeyId: window.env?.VITE_S3_ACCESS_KEY_ID || import.meta.env.VITE_S3_ACCESS_KEY_ID,
-      secretAccessKey: window.env?.VITE_S3_SECRET_ACCESS_KEY || import.meta.env.VITE_S3_SECRET_ACCESS_KEY,
-    },
-    forcePathStyle: true
-  })
-
-  const fetchGuests = async () => {
-    setLoading(true)
+  const fetchGuests = async (showLoading = true) => {
+    if (showLoading) setLoading(true)
     try {
       const { data, error } = await supabase
         .from('data_tamu')
@@ -104,7 +102,7 @@ function Admin() {
       console.error('Error fetching guests:', err)
       setError('Gagal memuat data tamu')
     } finally {
-      setLoading(false)
+      if (showLoading) setLoading(false)
     }
   }
 
@@ -112,22 +110,115 @@ function Admin() {
     try {
       const { data, error } = await supabase
         .from('config_tamu_dari')
-        .select('*')
+        .select('name, bulk_delay_seconds, bulk_randomize_delay')
         .order('name', { ascending: true })
 
       if (error) throw error
-      console.log('config_tamu_dari data:', data)
       setConfigTamuDari(data || [])
     } catch (err) {
       console.error('Error fetching config_tamu_dari:', err)
+      setError('Gagal memuat pilihan tamu dari: ' + err.message)
+    }
+  }
+
+  const fetchInvitationTemplates = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('invitation_message_templates')
+        .select('tamu_from, message_template, is_active')
+        .eq('is_active', true)
+
+      if (error) throw error
+      const templates = Object.fromEntries((data || []).map(item => [
+        searchableText(item.tamu_from),
+        item.message_template
+      ]))
+      setInvitationTemplates(templates)
+    } catch (err) {
+      console.error('Error fetching invitation templates:', err)
+      setError('Gagal memuat template pesan: ' + err.message)
     }
   }
 
   useEffect(() => {
-    // eslint-disable-next-line react-hooks/set-state-in-effect
-    fetchGuests()
-    fetchConfigTamuDari()
+    let mounted = true
+
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (!mounted) return
+      setIsLoggedIn(Boolean(session))
+      setCheckingAuth(false)
+    })
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      if (!mounted) return
+      setIsLoggedIn(Boolean(session))
+      setCheckingAuth(false)
+    })
+
+    return () => {
+      mounted = false
+      subscription.unsubscribe()
+    }
   }, [])
+
+  useEffect(() => {
+    if (!isLoggedIn) return
+    const loadTimer = window.setTimeout(() => {
+      fetchGuests()
+      fetchConfigTamuDari()
+      fetchInvitationTemplates()
+    }, 0)
+
+    return () => window.clearTimeout(loadTimer)
+  }, [isLoggedIn])
+
+  useEffect(() => {
+    if (!isLoggedIn) return
+
+    const channel = supabase
+      .channel('admin-guest-delivery-status')
+      .on(
+        'postgres_changes',
+        { event: 'UPDATE', schema: 'public', table: 'data_tamu' },
+        () => { void fetchGuests(false) }
+      )
+      .subscribe()
+
+    return () => {
+      void supabase.removeChannel(channel)
+    }
+  }, [isLoggedIn])
+
+  useEffect(() => {
+    if (!isLoggedIn) return
+    let syncing = false
+
+    const syncActiveBatches = async () => {
+      if (syncing) return
+      syncing = true
+      try {
+        const { data: activeBatches, error: activeBatchError } = await supabase
+          .from('invitation_bulk_batches')
+          .select('id')
+          .in('status', ['creating', 'pending', 'processing'])
+
+        if (activeBatchError) throw activeBatchError
+        await Promise.all((activeBatches || []).map(batch => (
+          supabase.functions.invoke('send-invitations-bulk', {
+            body: { action: 'status', batchId: batch.id }
+          })
+        )))
+      } catch (syncError) {
+        console.error('Background bulk sync failed:', syncError)
+      } finally {
+        syncing = false
+      }
+    }
+
+    void syncActiveBatches()
+    const syncTimer = window.setInterval(syncActiveBatches, 5000)
+    return () => window.clearInterval(syncTimer)
+  }, [isLoggedIn])
 
   const generateQRCode = async (guest) => {
     setGenerating(true)
@@ -148,18 +239,17 @@ function Admin() {
       })
 
       const base64Data = qrCodeDataUrl.replace(/^data:image\/png;base64,/, '')
-      const buffer = Buffer.from(base64Data, 'base64')
+      const binary = Uint8Array.from(atob(base64Data), char => char.charCodeAt(0))
+      const qrBlob = new Blob([binary], { type: 'image/png' })
+      const fileName = `${QR_PREFIX}/${guest.id}.png`
+      const { error: uploadError } = await supabase.storage
+        .from(QR_BUCKET)
+        .upload(fileName, qrBlob, {
+          contentType: 'image/png',
+          upsert: true
+        })
 
-      const fileName = `wedding-scan/${guest.id}.png`
-      const command = new PutObjectCommand({
-        Bucket: 'assets-devaq',
-        Key: fileName,
-        Body: buffer,
-        ContentType: 'image/png',
-        ACL: 'public-read'
-      })
-
-      await s3Client.send(command)
+      if (uploadError) throw uploadError
 
       const { error: updateError } = await supabase
         .from('data_tamu')
@@ -282,26 +372,116 @@ function Admin() {
     return { value: '', label: 'Belum', badgeClass: 'badge-pending' }
   }
 
+  const getInvitationStatus = (guest) => {
+    if (guest.invitation_status === 'sent') {
+      return { value: 'sent', label: 'Terkirim', badgeClass: 'badge-success' }
+    }
+
+    if (guest.invitation_status === 'failed') {
+      return { value: 'failed', label: 'Gagal', badgeClass: 'badge-danger' }
+    }
+
+    if (guest.invitation_status === 'sending') {
+      return { value: 'sending', label: 'Diproses', badgeClass: 'badge-pending' }
+    }
+
+    return { value: 'not_sent', label: 'Belum', badgeClass: 'badge-pending' }
+  }
+
+  const updateManualInvitationStatus = async (guest, status) => {
+    const payload = {
+      invitation_status: status,
+      invitation_sent_at: status === 'sent' ? new Date().toISOString() : null,
+      invitation_message_id: null,
+      invitation_error: status === 'failed' ? 'Ditandai gagal secara manual' : null,
+      invitation_bulk_batch_id: null,
+      invitation_delivery_method: status === 'not_sent' ? null : 'manual'
+    }
+
+    const previousGuests = guests
+    setGuests(currentGuests => currentGuests.map(item => (
+      item.id === guest.id ? { ...item, ...payload } : item
+    )))
+
+    try {
+      const { error: updateError } = await supabase
+        .from('data_tamu')
+        .update(payload)
+        .eq('id', guest.id)
+
+      if (updateError) throw updateError
+
+      const label = status === 'sent' ? 'Terkirim' : status === 'failed' ? 'Gagal' : 'Belum terkirim'
+      setSuccess(`Status undangan ${guest.nama_tamu} diubah menjadi ${label}`)
+      setTimeout(() => setSuccess(null), 3000)
+    } catch (err) {
+      console.error('Error updating invitation status:', err)
+      setGuests(previousGuests)
+      setError('Gagal mengubah status undangan: ' + err.message)
+      setTimeout(() => setError(null), 5000)
+    }
+  }
+
+  const renderInvitationMessage = (guest) => {
+    const template = invitationTemplates[searchableText(guest.tamu_from)]
+    if (!template) return ''
+
+    return template
+      .replaceAll('\\n', '\n')
+      .replaceAll('{{nama_tamu}}', guest.nama_tamu || '')
+      .replaceAll('{{alamat_tamu}}', guest.alamat_tamu || '')
+      .replaceAll('{{tamu_from}}', guest.tamu_from || '')
+  }
+
+  const copyInvitationMessage = async (guest) => {
+    const message = renderInvitationMessage(guest)
+    if (!message) {
+      setError(`Template pesan untuk ${guest.tamu_from || 'tamu ini'} belum tersedia`)
+      setTimeout(() => setError(null), 5000)
+      return
+    }
+
+    try {
+      if (navigator.clipboard?.writeText) {
+        await navigator.clipboard.writeText(message)
+      } else {
+        const textArea = document.createElement('textarea')
+        textArea.value = message
+        textArea.style.position = 'fixed'
+        textArea.style.opacity = '0'
+        document.body.appendChild(textArea)
+        textArea.select()
+        document.execCommand('copy')
+        document.body.removeChild(textArea)
+      }
+      setSuccess(`Pesan untuk ${guest.nama_tamu} berhasil disalin`)
+      setTimeout(() => setSuccess(null), 3000)
+    } catch (err) {
+      console.error('Error copying invitation message:', err)
+      setError('Gagal menyalin pesan: ' + err.message)
+      setTimeout(() => setError(null), 5000)
+    }
+  }
+
   const downloadTemplate = async () => {
     try {
       setLoadingTemplate(true)
       const selectedVal = selectedBulkFrom || ''
       const csvContent = `sep=;\nNama tamu;Alamat;Contact Number;Tamu dari\nJohn Doe;Jl. Kebon Jeruk No. 12;6281234567890;${selectedVal}\n`
-      const buffer = Buffer.from(csvContent, 'utf-8')
-      const fileName = 'wedding-scan/template/template.csv'
+      const fileName = `${QR_PREFIX}/template/template.csv`
+      const csvBlob = new Blob([csvContent], { type: 'text/csv;charset=utf-8' })
+      const { error: uploadError } = await supabase.storage
+        .from(QR_BUCKET)
+        .upload(fileName, csvBlob, {
+          contentType: 'text/csv;charset=utf-8',
+          upsert: true
+        })
 
-      const command = new PutObjectCommand({
-        Bucket: 'assets-devaq',
-        Key: fileName,
-        Body: buffer,
-        ContentType: 'text/csv',
-        ACL: 'public-read'
-      })
-
-      await s3Client.send(command)
+      if (uploadError) throw uploadError
 
       // Trigger download
-      const templateUrl = `https://nemuftsdmjzkzcygkjpg.supabase.co/storage/v1/object/public/assets-devaq/wedding-scan/template/template.csv?t=${Date.now()}`
+      const { data: publicUrlData } = supabase.storage.from(QR_BUCKET).getPublicUrl(fileName)
+      const templateUrl = `${publicUrlData.publicUrl}?t=${Date.now()}`
       const link = document.createElement('a')
       link.href = templateUrl
       link.setAttribute('download', 'template.csv')
@@ -427,18 +607,15 @@ function Admin() {
       if (uploadedFile) {
         const fileExtension = uploadedFile.name.split('.').pop() || 'csv'
         // Save to /assets-devaq/wedding-scan/template/data/bulk_[timestamp].[ext]
-        const s3Key = `wedding-scan/template/data/bulk_${Date.now()}.${fileExtension}`
-        const fileBuffer = await uploadedFile.arrayBuffer()
+        const storagePath = `${QR_PREFIX}/template/data/bulk_${Date.now()}.${fileExtension}`
+        const { error: uploadError } = await supabase.storage
+          .from(QR_BUCKET)
+          .upload(storagePath, uploadedFile, {
+            contentType: uploadedFile.type || 'text/csv',
+            upsert: false
+          })
 
-        const uploadCommand = new PutObjectCommand({
-          Bucket: 'assets-devaq',
-          Key: s3Key,
-          Body: Buffer.from(fileBuffer),
-          ContentType: uploadedFile.type || 'text/csv',
-          ACL: 'public-read'
-        })
-
-        await s3Client.send(uploadCommand)
+        if (uploadError) throw uploadError
       }
 
       // Insert guests into database
@@ -484,9 +661,50 @@ function Admin() {
     }
   }
 
+  const sendInvitation = async (guest) => {
+    setSendingInvitationIds(current => {
+      const next = new Set(current)
+      next.add(guest.id)
+      return next
+    })
+    setError(null)
+
+    try {
+      const { data, error: invokeError } = await supabase.functions.invoke('send-invitation', {
+        body: { guestId: guest.id }
+      })
+
+      if (invokeError) {
+        let message = invokeError.message
+        try {
+          const details = await invokeError.context?.json()
+          message = details?.error || message
+        } catch {
+          // Keep the SDK error when the response body is not JSON.
+        }
+        throw new Error(message)
+      }
+
+      setSuccess(`Undangan berhasil dikirim ke ${guest.nama_tamu} melalui ${data.senderName}`)
+      await fetchGuests()
+      setTimeout(() => setSuccess(null), 5000)
+    } catch (err) {
+      console.error('Error sending invitation:', err)
+      setError(`Gagal mengirim undangan: ${err.message}`)
+      setTimeout(() => setError(null), 7000)
+    } finally {
+      setSendingInvitationIds(current => {
+        const next = new Set(current)
+        next.delete(guest.id)
+        return next
+      })
+    }
+  }
+
   const getQRCodeUrl = (id, isGenerated) => {
     if (!isGenerated) return null
-    return `https://nemuftsdmjzkzcygkjpg.supabase.co/storage/v1/object/public/assets-devaq/wedding-scan/${id}.png`
+    const { data } = supabase.storage.from(QR_BUCKET).getPublicUrl(`${QR_PREFIX}/${id}.png`)
+    return data.publicUrl
   }
 
   const formatDate = (dateString) => {
@@ -498,6 +716,14 @@ function Admin() {
       hour: '2-digit',
       minute: '2-digit'
     })
+  }
+
+  if (checkingAuth) {
+    return (
+      <div style={{ minHeight: '100vh', display: 'grid', placeItems: 'center' }}>
+        <span className="text-body">Memeriksa sesi admin...</span>
+      </div>
+    )
   }
 
   if (!isLoggedIn) {
@@ -552,11 +778,12 @@ function Admin() {
           <form onSubmit={handleLogin}>
             <div style={{ marginBottom: 'var(--spacing-md)' }}>
               <input
-                type="text"
+                type="email"
                 className="input-field"
-                value={usernameInput}
-                onChange={(e) => setUsernameInput(e.target.value)}
-                placeholder="Username"
+                value={emailInput}
+                onChange={(e) => setEmailInput(e.target.value)}
+                placeholder="Email admin"
+                autoComplete="email"
                 required
               />
             </div>
@@ -567,11 +794,12 @@ function Admin() {
                 value={passwordInput}
                 onChange={(e) => setPasswordInput(e.target.value)}
                 placeholder="Password"
+                autoComplete="current-password"
                 required
               />
             </div>
-            <button type="submit" className="btn-primary" style={{ width: '100%' }}>
-              Masuk
+            <button type="submit" className="btn-primary" disabled={authenticating} style={{ width: '100%' }}>
+              {authenticating ? 'Memproses...' : 'Masuk'}
             </button>
           </form>
         </div>
@@ -580,7 +808,7 @@ function Admin() {
   }
 
   return (
-    <div style={{
+    <div className="admin-page" style={{
       minHeight: '100vh',
       background: 'var(--color-canvas-parchment)'
     }}>
@@ -636,6 +864,21 @@ function Admin() {
           Dashboard
         </h2>
         <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--spacing-sm)' }}>
+          <Link
+            to="/admin/bulk-invitations"
+            className="btn-pearl-capsule"
+            style={{
+              fontSize: '12px',
+              padding: '6px 12px',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '6px',
+              textDecoration: 'none'
+            }}
+          >
+            <Icon name="send" size={14} />
+            Monitor Bulk
+          </Link>
           <button
             className="btn-pearl-capsule"
             onClick={fetchGuests}
@@ -688,11 +931,7 @@ function Admin() {
       </div>
 
       {/* Main Content */}
-      <div style={{
-        maxWidth: '1200px',
-        margin: '0 auto',
-        padding: 'var(--spacing-xl) var(--spacing-lg)'
-      }}>
+      <div className="admin-main-content">
         {/* Stats */}
         <div style={{
           display: 'grid',
@@ -887,43 +1126,69 @@ function Admin() {
               Tidak ada data yang cocok dengan "{searchQuery}"
             </div>
           ) : (
-            <div style={{ overflowX: 'auto' }}>
-              <table>
+            <div className="admin-table-wrap">
+              <table className="admin-guest-table">
+                <colgroup>
+                  <col style={{ width: '3%' }} />
+                  <col style={{ width: '9%' }} />
+                  <col style={{ width: '10%' }} />
+                  <col style={{ width: '9%' }} />
+                  <col style={{ width: '7%' }} />
+                  <col style={{ width: '9%' }} />
+                  <col style={{ width: '10%' }} />
+                  <col style={{ width: '5%' }} />
+                  <col style={{ width: '9%' }} />
+                  <col style={{ width: '10%' }} />
+                  <col style={{ width: '15%' }} />
+                  <col style={{ width: '4%' }} />
+                </colgroup>
                 <thead>
                   <tr>
-                    <th style={{ width: '48px' }}>No</th>
+                    <th>No</th>
                     <th>Nama Tamu</th>
                     <th>Alamat</th>
-                    <th style={{ width: '150px' }}>Contact Number</th>
-                    <th style={{ width: '120px' }}>Tamu dari</th>
-                    <th style={{ width: '128px' }}>Status</th>
-                    <th style={{ width: '140px' }}>Check-in</th>
-                    <th style={{ width: '80px' }}>QR</th>
-                    <th style={{ width: '60px' }}></th>
+                    <th>Contact Number</th>
+                    <th>Tamu dari</th>
+                    <th>Status</th>
+                    <th>Check-in</th>
+                    <th>QR</th>
+                    <th>Status Terkirim</th>
+                    <th>Terkirim Kapan</th>
+                    <th>Aksi Undangan</th>
+                    <th></th>
                   </tr>
                 </thead>
                 <tbody>
                   {paginatedGuests.map((guest, index) => {
                     const attendance = getAttendanceStatus(guest)
+                    const invitationDelivery = getInvitationStatus(guest)
+                    const invitationSending = sendingInvitationIds.has(guest.id)
+                    const canSendInvitation = Boolean(guest.contact_number && guest.tamu_from)
+                    const canCopyMessage = Boolean(invitationTemplates[searchableText(guest.tamu_from)])
+                    const disabledReason = !guest.contact_number
+                      ? 'Nomor WhatsApp belum diisi'
+                      : !guest.tamu_from
+                        ? 'Tamu dari belum dipilih'
+                        : ''
 
                     return (
                       <tr key={guest.id}>
-                        <td className="text-caption" style={{ color: 'var(--color-ink-muted-48)' }}>
+                        <td data-label="No" className="text-caption" style={{ color: 'var(--color-ink-muted-48)' }}>
                           {startIndex + index + 1}
                         </td>
-                        <td>
+                        <td data-label="Nama Tamu">
                           <span className="text-body-strong">{guest.nama_tamu}</span>
                         </td>
-                        <td className="text-caption">
+                        <td data-label="Alamat" className="text-caption">
                           {guest.alamat_tamu}
                         </td>
-                        <td className="text-caption">
+                        <td data-label="Contact Number" className="text-caption">
                           {guest.contact_number || '-'}
                         </td>
-                        <td className="text-caption">
+                        <td data-label="Tamu dari" className="text-caption">
                           {guest.tamu_from || '-'}
                         </td>
-                        <td>
+                        <td data-label="Status">
                           <select
                             className={`status-select ${attendance.badgeClass}`}
                             value={attendance.value}
@@ -935,11 +1200,11 @@ function Admin() {
                             <option value="tidak_hadir">Tidak Hadir</option>
                           </select>
                         </td>
-                        <td className="text-caption" style={{ color: 'var(--color-ink-muted-48)' }}>
+                        <td data-label="Check-in" className="text-caption" style={{ color: 'var(--color-ink-muted-48)' }}>
                           {formatDate(guest.checkin)}
                           {guest.signed_by ? ` | ${guest.signed_by}` : ''}
                         </td>
-                        <td>
+                        <td data-label="QR">
                           {guest.is_generated ? (
                             <a
                               href={getQRCodeUrl(guest.id, guest.is_generated)}
@@ -970,7 +1235,91 @@ function Admin() {
                             </button>
                           )}
                         </td>
-                        <td>
+                        <td data-label="Status Terkirim">
+                          <select
+                            className={`status-select ${invitationDelivery.badgeClass}`}
+                            value={invitationDelivery.value}
+                            onChange={(event) => updateManualInvitationStatus(guest, event.target.value)}
+                            aria-label={`Ubah status undangan ${guest.nama_tamu}`}
+                          >
+                            <option value="not_sent">Belum</option>
+                            {invitationDelivery.value === 'sending' && (
+                              <option value="sending" disabled>Diproses</option>
+                            )}
+                            <option value="sent">Terkirim</option>
+                            <option value="failed">Gagal</option>
+                          </select>
+                        </td>
+                        <td data-label="Terkirim Kapan" className="text-caption" style={{ color: 'var(--color-ink-muted-48)' }}>
+                          {formatDate(guest.invitation_sent_at)}
+                          {guest.invitation_delivery_method && (
+                            <span className="text-fine-print" style={{ display: 'block', marginTop: '3px' }}>
+                              {guest.invitation_delivery_method === 'manual'
+                                ? 'Manual'
+                                : guest.invitation_delivery_method === 'openwa_bulk'
+                                  ? 'OpenWA Bulk'
+                                  : 'OpenWA'}
+                            </span>
+                          )}
+                        </td>
+                        <td data-label="Aksi Undangan">
+                          <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
+                          <button
+                            className="btn-pearl-capsule"
+                            onClick={() => sendInvitation(guest)}
+                            disabled={!canSendInvitation || invitationSending}
+                            title={disabledReason || `Kirim undangan melalui WhatsApp ${guest.tamu_from}`}
+                            style={{
+                              fontSize: '12px',
+                              padding: '6px 10px',
+                              display: 'inline-flex',
+                              alignItems: 'center',
+                              gap: '5px',
+                              opacity: !canSendInvitation || invitationSending ? 0.5 : 1
+                            }}
+                          >
+                            <Icon name="send" size={13} />
+                            {invitationSending
+                              ? 'Mengirim...'
+                              : guest.invitation_status === 'sent'
+                                ? 'Kirim Ulang'
+                                : 'Send Invitation'}
+                          </button>
+                            <button
+                              className="btn-pearl-capsule"
+                              onClick={() => copyInvitationMessage(guest)}
+                              disabled={!canCopyMessage}
+                              title={canCopyMessage
+                                ? 'Salin teks pesan tanpa QR'
+                                : 'Template pesan belum tersedia'}
+                              style={{
+                                fontSize: '12px',
+                                padding: '6px 10px',
+                                display: 'inline-flex',
+                                alignItems: 'center',
+                                gap: '5px',
+                                opacity: canCopyMessage ? 1 : 0.5
+                              }}
+                            >
+                              <Icon name="copy" size={13} />
+                              Copy Message
+                            </button>
+                          </div>
+                          {guest.invitation_error && (
+                            <span className="text-fine-print" title={guest.invitation_error} style={{
+                              display: 'block',
+                              marginTop: '4px',
+                              color: '#b42318',
+                              maxWidth: '190px',
+                              overflow: 'hidden',
+                              textOverflow: 'ellipsis',
+                              whiteSpace: 'nowrap'
+                            }}>
+                              {guest.invitation_error}
+                            </span>
+                          )}
+                        </td>
+                        <td data-label="Hapus">
                           <button
                             className="btn-icon-circular"
                             onClick={() => deleteGuest(guest.id, guest.nama_tamu)}
@@ -1144,7 +1493,7 @@ function Admin() {
                 >
                   <option value="">Pilih opsi</option>
                   {configTamuDari.map((item) => (
-                    <option key={item.id} value={item.name}>
+                    <option key={item.name} value={item.name}>
                       {item.name}
                     </option>
                   ))}
@@ -1226,7 +1575,7 @@ function Admin() {
                 >
                   <option value="">Pilih opsi default</option>
                   {configTamuDari.map((item) => (
-                    <option key={item.id} value={item.name}>
+                    <option key={item.name} value={item.name}>
                       {item.name}
                     </option>
                   ))}

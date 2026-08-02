@@ -1,0 +1,86 @@
+{
+  "generated_at": "2026-08-02T03:40:53.564745+00:00",
+  "nodes": {
+    "wedding_absen_env_setup_secret_management": {
+      "code_fingerprint": "c7991d08ad20a33db0877702037b313ea5257f02441832ab4a58127b8392ab98",
+      "label": "Environment Secret Management",
+      "last": "2026-08-02T03:31:44.373795+00:00",
+      "provenance": [
+        {
+          "date": "2026-08-02T03:31:44.373795+00:00",
+          "outcome": "useful",
+          "q": "Integrate OpenWA sessions by guest source without storing credentials in the frontend"
+        }
+      ],
+      "score": 0.999853147,
+      "source_file": "wedding-absen/ENV_SETUP.md",
+      "status": "tentative",
+      "uses": 1
+    },
+    "wedding_absen_project_summary_admin_panel": {
+      "code_fingerprint": "3351ab982561a14496d0629dc6be514e073d468be975d2648bbe6611b9528f19",
+      "label": "Admin Guest Management Panel",
+      "last": "2026-08-02T03:31:44.373795+00:00",
+      "provenance": [
+        {
+          "date": "2026-08-02T03:31:44.373795+00:00",
+          "outcome": "useful",
+          "q": "Integrate OpenWA sessions by guest source without storing credentials in the frontend"
+        }
+      ],
+      "score": 0.999853147,
+      "source_file": "wedding-absen/PROJECT_SUMMARY.md",
+      "status": "tentative",
+      "uses": 1
+    },
+    "wedding_absen_project_summary_data_tamu_schema": {
+      "code_fingerprint": "3351ab982561a14496d0629dc6be514e073d468be975d2648bbe6611b9528f19",
+      "label": "data_tamu Database Schema",
+      "last": "2026-08-02T03:31:44.373795+00:00",
+      "provenance": [
+        {
+          "date": "2026-08-02T03:31:44.373795+00:00",
+          "outcome": "useful",
+          "q": "Integrate OpenWA sessions by guest source without storing credentials in the frontend"
+        }
+      ],
+      "score": 0.999853147,
+      "source_file": "wedding-absen/PROJECT_SUMMARY.md",
+      "status": "tentative",
+      "uses": 1
+    },
+    "wedding_absen_src_pages_admin_admin": {
+      "code_fingerprint": "3d15fc38fd4af7aa429d889162ecc2d51027e3ae34c9b4f254b212d8f5eac7c7",
+      "label": "Admin()",
+      "last": "2026-08-02T03:31:44.373795+00:00",
+      "provenance": [
+        {
+          "date": "2026-08-02T03:31:44.373795+00:00",
+          "outcome": "useful",
+          "q": "Integrate OpenWA sessions by guest source without storing credentials in the frontend"
+        }
+      ],
+      "score": 0.999853147,
+      "source_file": "wedding-absen/src/pages/Admin.jsx",
+      "status": "tentative",
+      "uses": 1
+    },
+    "wedding_absen_src_supabaseclient_supabase": {
+      "code_fingerprint": "852f84a816a432faa049d6f4c49ab9e6c4bb9cd6f0a3417a427414c4f150b38a",
+      "label": "supabase",
+      "last": "2026-08-02T03:31:44.373795+00:00",
+      "provenance": [
+        {
+          "date": "2026-08-02T03:31:44.373795+00:00",
+          "outcome": "useful",
+          "q": "Integrate OpenWA sessions by guest source without storing credentials in the frontend"
+        }
+      ],
+      "score": 0.999853147,
+      "source_file": "wedding-absen/src/supabaseClient.js",
+      "status": "tentative",
+      "uses": 1
+    }
+  },
+  "version": 1
+}

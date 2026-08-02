@@ -5,8 +5,11 @@ Sistem absensi pernikahan modern dengan fitur generate dan scan QR code.
 ## 🎯 Fitur Utama
 
 ### 1. Admin Panel (`/admin`)
-- **Login Admin**: Username: `admin`, Password: `@R00tsys147`
+- **Login Admin**: Email/password melalui Supabase Auth
 - **Generate QR Code**: Generate QR code untuk semua tamu atau per tamu
+- **Send Invitation**: Kirim QR melalui session OpenWA sesuai `tamu_from`
+- **Bulk Invitation**: Kirim maksimal 100 undangan per sender melalui background batch OpenWA dengan delay dan randomisasi
+- **Manual Delivery**: Copy teks pesan, ubah status terkirim, dan catat waktu kirim dari dashboard
 - **Manajemen Tamu**: Tambah, hapus, dan lihat daftar tamu
 - **Dashboard**: Lihat status check-in, QR code, dan detail tamu
 
@@ -22,6 +25,9 @@ Sistem absensi pernikahan modern dengan fitur generate dan scan QR code.
 - **Storage**: Supabase Storage (S3)
 - **QR Generation**: qrcode library
 - **QR Scanning**: html5-qrcode library
+
+Panduan konfigurasi OpenWA dan Supabase Edge Function tersedia di
+[`OPENWA_SETUP.md`](./OPENWA_SETUP.md).
 
 ## 📦 Database Schema
 
@@ -54,14 +60,14 @@ yarn install
 
 2. **Configure environment variables** (`.env`):
 ```env
-VITE_SUPABASE_URL=your_supabase_url
-VITE_SUPABASE_PUBLISHABLE_KEY=your_publishable_key
-VITE_SUPABASE_STORAGE_ENDPOINT=your_storage_endpoint
-VITE_S3_ACCESS_KEY_ID=your_access_key
-VITE_S3_SECRET_ACCESS_KEY=your_secret_key
-VITE_S3_REGION=your_region
-VITE_ADMIN_USERNAME=admin
-VITE_ADMIN_PASSWORD=your_password
+VITE_SUPABASE_URL=https://your-project-id.supabase.co
+VITE_SUPABASE_PUBLISHABLE_KEY=your-anon-publishable-key
+VITE_SUPABASE_STORAGE_ENDPOINT=deprecated-use-supabase-storage-sdk
+VITE_S3_ACCESS_KEY_ID=deprecated-do-not-use-in-browser
+VITE_S3_SECRET_ACCESS_KEY=deprecated-do-not-use-in-browser
+VITE_S3_REGION=deprecated
+VITE_ADMIN_USERNAME=deprecated-use-supabase-auth
+VITE_ADMIN_PASSWORD=deprecated-use-supabase-auth
 ```
 
 3. **Run the app**:

@@ -7,21 +7,5 @@ export default defineConfig({
   server: {
     host: '0.0.0.0',
     port: 3000
-  },
-  define: {
-    'global': 'globalThis'
-  },
-  resolve: {
-    alias: {
-      buffer: 'buffer'
-    }
-  },
-  optimizeDeps: {
-    include: ['buffer'],
-    esbuildOptions: {
-      define: {
-        global: 'globalThis'
-      }
-    }
   }
 })

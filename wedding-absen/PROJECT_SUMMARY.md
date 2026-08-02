@@ -99,14 +99,14 @@ wedding-absen/
 
 ### Environment Variables (.env)
 ```env
-VITE_SUPABASE_URL=https://nemuftsdmjzkzcygkjpg.supabase.co
-VITE_SUPABASE_PUBLISHABLE_KEY=sb_publishable_GsJ39jiTlNvyBG69MNxrAQ_kJQu0Cmp
-VITE_SUPABASE_STORAGE_ENDPOINT=https://nemuftsdmjzkzcygkjpg.storage.supabase.co/storage/v1/s3
-VITE_S3_ACCESS_KEY_ID=010b30cde558f2e988cad663b4de2e93
-VITE_S3_SECRET_ACCESS_KEY=ef9e4b8b6ad47b7a4d3388f5e6f898dc51cb98c2a20baaaddc7520d8f73194d7
-VITE_S3_REGION=ap-northeast-1
-VITE_ADMIN_USERNAME=admin
-VITE_ADMIN_PASSWORD=@R00tsys147
+VITE_SUPABASE_URL=https://your-project-id.supabase.co
+VITE_SUPABASE_PUBLISHABLE_KEY=your-anon-publishable-key
+VITE_SUPABASE_STORAGE_ENDPOINT=deprecated-use-supabase-storage-sdk
+VITE_S3_ACCESS_KEY_ID=deprecated-do-not-use-in-browser
+VITE_S3_SECRET_ACCESS_KEY=deprecated-do-not-use-in-browser
+VITE_S3_REGION=deprecated
+VITE_ADMIN_USERNAME=deprecated-use-supabase-auth
+VITE_ADMIN_PASSWORD=deprecated-use-supabase-auth
 ```
 
 ### Database Schema (data_tamu)
