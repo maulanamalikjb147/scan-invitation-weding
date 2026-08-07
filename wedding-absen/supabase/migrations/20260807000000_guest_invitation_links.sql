@@ -98,7 +98,7 @@ WHERE position('{{invitation_url}}' in message_template) = 0;
 
 CREATE OR REPLACE FUNCTION public.get_wedding_guest(p_slug TEXT)
 RETURNS TABLE (
-  id UUID,
+  id BIGINT,
   nama_tamu TEXT,
   alamat_tamu TEXT,
   invitation_slug TEXT
