@@ -1,5 +1,5 @@
 export const wedding = {
-  shortNames: "Maulana & Anisa",
+  shortNames: "Anisa & Maulana",
   date: "2026-09-26T08:00:00+07:00",
   dateLabel: "Sabtu, 26 September 2026",
   groom: {
@@ -19,8 +19,8 @@ export const wedding = {
   ],
   mapsUrl: "https://maps.app.goo.gl/QNSAzPPbZwcx58Qd9",
   gifts: [
-    { bank: "Rekening", number: "1270012172761", owner: "Maulana Malik J. B." },
     { bank: "Rekening", number: "446101046660531", owner: "Anisa Syafitri" },
+    { bank: "Rekening", number: "1270012172761", owner: "Maulana Malik J. B." },
   ],
 } as const;
 
@@ -42,5 +42,5 @@ const galleryFiles = [
 
 export const gallery = galleryFiles.map((file, index) => ({
   src: `/images/${file}`,
-  alt: `Momen prewedding Maulana dan Anisa ${index + 1}`,
+  alt: `Momen prewedding Anisa dan Maulana ${index + 1}`,
 }));

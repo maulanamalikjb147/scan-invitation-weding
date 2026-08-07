@@ -44,7 +44,7 @@ export function RsvpSection() {
           <form onSubmit={handleSubmit(onSubmit)} className="mt-9 space-y-4">
             <div><input className="field" placeholder="Nama kamu" aria-label="Nama" {...register("name", { required: "Nama wajib diisi", minLength: { value: 2, message: "Nama terlalu singkat" } })} />{errors.name && <p className="font-label mt-1 text-xs text-[#ffb4ab]">{errors.name.message}</p>}</div>
             <div className="grid grid-cols-2 gap-3">
-              <select className="field" aria-label="Jumlah tamu" {...register("guests", { valueAsNumber: true })}>{[1,2,3,4,5].map((guest) => <option key={guest} value={guest}>{guest} tamu</option>)}</select>
+              <select className="field" aria-label="Jumlah tamu" {...register("guests", { valueAsNumber: true })}>{[1,2].map((guest) => <option key={guest} value={guest}>{guest} tamu</option>)}</select>
               <select className="field" aria-label="Konfirmasi kehadiran" {...register("attendance")}><option value="hadir">Aku hadir</option><option value="tidak">Belum bisa hadir</option></select>
             </div>
             <textarea className="field min-h-28 resize-y" placeholder="Tulis ucapan terbaikmu…" aria-label="Ucapan" {...register("message", { maxLength: { value: 500, message: "Maksimal 500 karakter" } })} />

@@ -3,7 +3,13 @@ import { wedding } from "@/lib/wedding-config";
 import { Reveal } from "./Reveal";
 import { SectionBackdrop } from "./SectionBackdrop";
 
-function PersonCard({ person, number }: { person: typeof wedding.groom | typeof wedding.bride; number: string }) {
+function PersonCard({
+  person,
+  role,
+}: {
+  person: typeof wedding.groom | typeof wedding.bride;
+  role: "wanita" | "pria";
+}) {
   return (
     <Reveal className="grid gap-6 md:grid-cols-[1fr_.78fr] md:items-end">
       <div className="group relative aspect-[4/5] overflow-hidden rounded-[8px] border border-white/10 bg-[#1b1c18]">
@@ -11,7 +17,7 @@ function PersonCard({ person, number }: { person: typeof wedding.groom | typeof 
         <div className="absolute inset-0 bg-gradient-to-t from-[#131410]/65 via-transparent to-transparent" />
       </div>
       <div className="pb-3">
-        <p className="eyebrow mb-3 text-[#c5a059]">Mengenal mempelai {number === "01" ? "pria" : "wanita"}</p>
+        <p className="eyebrow mb-3 text-[#c5a059]">Mengenal mempelai {role}</p>
         <h3 className="font-display text-4xl leading-tight md:text-5xl">{person.fullName}</h3>
         <p className="mt-4 leading-7 text-[#d1c5b4]">{person.parents}</p>
       </div>
@@ -28,7 +34,7 @@ export function CoupleSection() {
         <div className="md:col-span-7"><p className="eyebrow text-[#c5a059]">Kisah dua insan</p><h2 className="font-display mt-4 text-5xl leading-[.95] md:text-7xl">Dua cerita,<br /><span className="italic text-[#c5a059]">satu perjalanan.</span></h2></div>
         <p className="max-w-md leading-7 text-[#d1c5b4] md:col-span-5">Dengan memohon rahmat dan ridho Allah SWT, kami mengundang Anda untuk menjadi bagian dari hari yang paling berarti dalam perjalanan kami.</p>
       </Reveal>
-      <div className="grid gap-16 lg:grid-cols-2 lg:gap-10"><PersonCard person={wedding.groom} number="01" /><PersonCard person={wedding.bride} number="02" /></div>
+      <div className="grid gap-16 lg:grid-cols-2 lg:gap-10"><PersonCard person={wedding.bride} role="wanita" /><PersonCard person={wedding.groom} role="pria" /></div>
       </div>
     </section>
   );

@@ -61,7 +61,7 @@ export async function POST(request: Request) {
   try {
     const payload = await request.json() as { name?: string; guests?: number; attendance?: string; message?: string };
     const name = payload.name?.trim().slice(0, 80) ?? "";
-    const guests = Math.min(5, Math.max(1, Number(payload.guests) || 1));
+    const guests = Math.min(2, Math.max(1, Number(payload.guests) || 1));
     const attendance = payload.attendance === "tidak" ? "tidak" : "hadir";
     const message = payload.message?.trim().slice(0, 500) ?? "";
     if (name.length < 2) return Response.json({ error: "Nama wajib diisi" }, { status: 400 });

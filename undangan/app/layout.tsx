@@ -7,7 +7,7 @@ export async function generateMetadata(): Promise<Metadata> {
   const host = requestHeaders.get("x-forwarded-host") ?? requestHeaders.get("host") ?? "localhost:3000";
   const protocol = requestHeaders.get("x-forwarded-proto") ?? (host.includes("localhost") ? "http" : "https");
   const base = new URL(`${protocol}://${host}`);
-  const title = "Undangan Pernikahan Maulana & Anisa";
+  const title = "Undangan Pernikahan Anisa & Maulana";
   const description = "Dengan penuh kebahagiaan, kami mengundang Bapak/Ibu/Saudara/i untuk hadir dan merayakan hari istimewa kami pada Sabtu, 26 September 2026. #roMAnSAsatuhati";
   const previewImage = new URL("/maulanaanisa.png", base);
 
@@ -15,17 +15,17 @@ export async function generateMetadata(): Promise<Metadata> {
     metadataBase: base,
     title,
     description,
-    applicationName: "Undangan Maulana & Anisa",
-    keywords: ["undangan pernikahan", "Maulana dan Anisa", "26 September 2026", "roMAnSAsatuhati"],
+    applicationName: "Undangan Anisa & Maulana",
+    keywords: ["undangan pernikahan", "Anisa dan Maulana", "26 September 2026", "roMAnSAsatuhati"],
     icons: { icon: "/favicon.png", shortcut: "/favicon.png" },
     openGraph: {
       title,
       description,
-      siteName: "Undangan Maulana & Anisa",
+      siteName: "Undangan Anisa & Maulana",
       url: base,
       type: "website",
       locale: "id_ID",
-      images: [{ url: previewImage, secureUrl: previewImage, width: 1731, height: 909, type: "image/png", alt: "Undangan Pernikahan Maulana dan Anisa, 26 September 2026" }],
+      images: [{ url: previewImage, secureUrl: previewImage, width: 1731, height: 909, type: "image/png", alt: "Undangan Pernikahan Anisa dan Maulana, 26 September 2026" }],
     },
     twitter: {
       card: "summary_large_image",

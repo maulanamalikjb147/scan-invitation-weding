@@ -20,11 +20,16 @@ export async function listRsvps(): Promise<Rsvp[]> {
 }
 
 export async function submitRsvp(input: RsvpInput) {
+  const normalizedInput = {
+    ...input,
+    guests: Math.min(2, Math.max(1, Number(input.guests) || 1)),
+    message: input.message.trim().slice(0, 500),
+  };
   if (supabaseUrl && supabaseHeaders) {
-    const response = await fetch(`${supabaseUrl}/rest/v1/rsvps`, { method: "POST", headers: { ...supabaseHeaders, "Content-Type": "application/json", Prefer: "return=representation" }, body: JSON.stringify(input) });
+    const response = await fetch(`${supabaseUrl}/rest/v1/rsvps`, { method: "POST", headers: { ...supabaseHeaders, "Content-Type": "application/json", Prefer: "return=representation" }, body: JSON.stringify(normalizedInput) });
     if (!response.ok) throw new Error("RSVP belum terkirim");
     return;
   }
-  const response = await fetch("/api/rsvp", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(input) });
+  const response = await fetch("/api/rsvp", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(normalizedInput) });
   if (!response.ok) throw new Error("RSVP belum terkirim");
 }

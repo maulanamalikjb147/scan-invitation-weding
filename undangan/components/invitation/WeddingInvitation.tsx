@@ -17,17 +17,21 @@ import type { WeddingGuest } from "@/lib/guest";
 const petals = [8, 19, 32, 47, 63, 76, 89];
 
 export function WeddingInvitation({ guest }: { guest: WeddingGuest }) {
-  const [qrOpen, setQrOpen] = useState(true);
+  const [qrOpen, setQrOpen] = useState(false);
   const [coverOpen, setCoverOpen] = useState(true);
   const { playing, start, toggle } = useAmbientMusic();
   const openInvitation = () => {
     void start();
     setCoverOpen(false);
+    setQrOpen(true);
+  };
+  const continueToInvitation = () => {
+    setQrOpen(false);
     setTimeout(() => document.querySelector("#home")?.scrollIntoView({ behavior: "smooth" }), 300);
   };
   return (
     <main>
-      <QrPrelude guest={guest} open={qrOpen} onContinue={() => setQrOpen(false)} />
+      <QrPrelude guest={guest} open={qrOpen} onContinue={continueToInvitation} />
       <Cover open={coverOpen} onOpen={openInvitation} guestName={guest.name} />
       <div aria-hidden="true">{petals.map((left, index) => <span key={left} className="petal" style={{ left: `${left}%`, animationDuration: `${10 + index * 1.35}s`, animationDelay: `${-index * 1.7}s` }} />)}</div>
       <Hero />
