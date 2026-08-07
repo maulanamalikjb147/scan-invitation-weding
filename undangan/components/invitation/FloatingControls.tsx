@@ -2,7 +2,7 @@
 
 import { CalendarDays, Gift, Images, MessageCircle, Music2, Pause } from "lucide-react";
 
-const nav = [{ href: "#event", label: "Acara", icon: CalendarDays }, { href: "#gallery", label: "Galeri", icon: Images }, { href: "#rsvp", label: "RSVP", icon: MessageCircle }, { href: "#gift", label: "Kado", icon: Gift }];
+const nav = [{ href: "#event", label: "Acara", icon: CalendarDays }, { href: "#gallery", label: "Galeri", icon: Images }, { href: "#gift", label: "Kado", icon: Gift }, { href: "#rsvp", label: "RSVP", icon: MessageCircle }];
 
 export function FloatingControls({ playing, onMusic }: { playing: boolean; onMusic: () => void }) {
   return (

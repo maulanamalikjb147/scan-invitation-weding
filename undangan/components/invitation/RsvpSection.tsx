@@ -41,8 +41,8 @@ export function RsvpSection() {
       <SectionBackdrop src="/images/gambar9.jpg" position="object-[50%_48%]" strength="opacity-[.58]" />
       <div className="page-shell relative z-10 grid gap-8 lg:grid-cols-[.88fr_1.12fr] lg:gap-12">
         <Reveal>
-          <p className="eyebrow text-[#c5a059]">Konfirmasi kehadiran</p>
-          <h2 className="font-display mt-3 text-4xl leading-[1.02] md:text-6xl">Bisakah kamu <span className="italic text-[#c5a059]">hadir?</span></h2>
+          <p className="eyebrow text-[#c5a059]">Ucapan dan doa</p>
+          <h2 className="font-display mt-3 text-4xl leading-[1.02] md:text-6xl">Kirim ucapan & <span className="italic text-[#c5a059]">konfirmasi.</span></h2>
           <p className="mt-5 max-w-lg text-[0.96rem] leading-7 text-[#d1c5b4]">Berikan ucapan, harapan, dan konfirmasi kehadiran untuk hari bahagia kami.</p>
           <form onSubmit={handleSubmit(onSubmit)} className="rsvp-panel mt-7 space-y-6 p-4 md:p-6">
             <input type="hidden" {...register("attendance")} />

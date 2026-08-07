@@ -34,7 +34,7 @@ export function EventSection() {
     <section id="event" className="section-rule relative overflow-hidden py-18 md:py-36">
       <SectionBackdrop src="/images/gambar4.jpg" position="object-[50%_52%]" strength="opacity-[.62]" />
       <div className="page-shell relative z-10">
-        <Reveal className="text-center"><p className="eyebrow text-[#c5a059]">Simpan tanggalnya</p><h2 className="font-display mt-4 text-4xl md:text-7xl">Menuju hari <span className="italic text-[#c5a059]">bahagia.</span></h2></Reveal>
+        <Reveal className="mx-auto max-w-2xl text-center"><p className="eyebrow text-[#c5a059]">Simpan tanggalnya</p><h2 className="font-display mt-4 text-4xl md:text-7xl">Menuju hari <span className="italic text-[#c5a059]">bahagia.</span></h2><p className="mt-5 leading-7 text-[#d1c5b4]">Kami menantikan kehadiran Bapak/Ibu/Saudara/i untuk menjadi saksi dan memberikan doa restu pada rangkaian acara kami.</p></Reveal>
         <Reveal className="mx-auto mt-12 grid max-w-4xl grid-cols-4 border-y border-white/10 py-7" delay={.1}>
           {countdownLabels.map((label) => {
             const value = countdown?.[label];
