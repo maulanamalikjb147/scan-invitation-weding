@@ -8,7 +8,7 @@ export function Footer() {
       <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(19,20,16,.80)_0%,rgba(19,20,16,.16)_35%,rgba(19,20,16,.76))]" />
       <div className="page-shell relative z-10 flex min-h-[78svh] flex-col items-center justify-end pb-28 text-center">
         <p className="eyebrow text-[#e9c176]">Sampai jumpa di hari bahagia</p>
-        <h2 className="font-display mt-5 text-6xl leading-[.9] md:text-8xl">Anisa <span className="italic text-[#c5a059]">&</span> Maulana</h2>
+        <h2 className="font-display mt-5 text-5xl leading-[.95] md:text-8xl">Anisa <span className="italic text-[#c5a059]">&</span> Maulana</h2>
         <p className="font-label mt-6 text-xs uppercase tracking-[.22em] text-white/60">{wedding.dateLabel}</p>
         <p className="mt-10 max-w-lg italic text-[#d1c5b4]">“Dan di antara tanda-tanda kebesaran-Nya, Dia menciptakan pasangan-pasangan untukmu agar kamu cenderung dan merasa tenteram kepadanya.”</p>
         <div className="mt-8 flex items-center gap-4" aria-label="Tagar pernikahan">

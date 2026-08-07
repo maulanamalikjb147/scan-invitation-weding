@@ -18,7 +18,7 @@ function PersonCard({
       </div>
       <div className="pb-3">
         <p className="eyebrow mb-3 text-[#c5a059]">Mengenal mempelai {role}</p>
-        <h3 className="font-display text-4xl leading-tight md:text-5xl">{person.fullName}</h3>
+        <h3 className="font-display text-3xl leading-tight md:text-5xl">{person.fullName}</h3>
         <p className="mt-4 leading-7 text-[#d1c5b4]">{person.parents}</p>
       </div>
     </Reveal>
@@ -27,11 +27,11 @@ function PersonCard({
 
 export function CoupleSection() {
   return (
-    <section id="couple" className="section-rule relative overflow-hidden py-24 md:py-36">
+    <section id="couple" className="section-rule relative overflow-hidden py-18 md:py-36">
       <SectionBackdrop src="/images/gambar6.jpg" position="object-[50%_44%]" strength="opacity-[.58]" />
       <div className="page-shell relative z-10">
       <Reveal className="mb-14 grid gap-6 md:grid-cols-12 md:items-end">
-        <div className="md:col-span-7"><p className="eyebrow text-[#c5a059]">Kisah dua insan</p><h2 className="font-display mt-4 text-5xl leading-[.95] md:text-7xl">Dua cerita,<br /><span className="italic text-[#c5a059]">satu perjalanan.</span></h2></div>
+        <div className="md:col-span-7"><p className="eyebrow text-[#c5a059]">Kisah dua insan</p><h2 className="font-display mt-4 text-4xl leading-[1.02] md:text-7xl">Dua cerita,<br /><span className="italic text-[#c5a059]">satu perjalanan.</span></h2></div>
         <p className="max-w-md leading-7 text-[#d1c5b4] md:col-span-5">Dengan memohon rahmat dan ridho Allah SWT, kami mengundang Anda untuk menjadi bagian dari hari yang paling berarti dalam perjalanan kami.</p>
       </Reveal>
       <div className="grid gap-16 lg:grid-cols-2 lg:gap-10"><PersonCard person={wedding.bride} role="wanita" /><PersonCard person={wedding.groom} role="pria" /></div>
