@@ -6,6 +6,12 @@ import Icon from '../components/Icon'
 
 const QR_BUCKET = 'assets-devaq'
 const QR_PREFIX = 'wedding-scan'
+const runtimeEnv = typeof window !== 'undefined' ? window.env : undefined
+const INVITATION_BASE_URL = (
+  runtimeEnv?.VITE_INVITATION_BASE_URL ||
+  import.meta.env.VITE_INVITATION_BASE_URL ||
+  'https://anisa.maulanamalik.my.id'
+).replace(/\/$/, '')
 const searchableText = (value) => String(value ?? '').toLowerCase()
 
 function Admin() {
@@ -431,7 +437,12 @@ function Admin() {
       .replaceAll('{{nama_tamu}}', guest.nama_tamu || '')
       .replaceAll('{{alamat_tamu}}', guest.alamat_tamu || '')
       .replaceAll('{{tamu_from}}', guest.tamu_from || '')
+      .replaceAll('{{invitation_url}}', getInvitationUrl(guest))
   }
+
+  const getInvitationUrl = (guest) => guest.invitation_slug
+    ? `${INVITATION_BASE_URL}/${encodeURIComponent(guest.invitation_slug)}`
+    : INVITATION_BASE_URL
 
   const copyInvitationMessage = async (guest) => {
     const message = renderInvitationMessage(guest)
@@ -865,6 +876,21 @@ function Admin() {
         </h2>
         <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--spacing-sm)' }}>
           <Link
+            to="/admin/scan"
+            className="btn-pearl-capsule"
+            style={{
+              fontSize: '12px',
+              padding: '6px 12px',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '6px',
+              textDecoration: 'none'
+            }}
+          >
+            <Icon name="camera" size={14} />
+            Scan
+          </Link>
+          <Link
             to="/admin/bulk-invitations"
             className="btn-pearl-capsule"
             style={{
@@ -1165,6 +1191,7 @@ function Admin() {
                     const invitationSending = sendingInvitationIds.has(guest.id)
                     const canSendInvitation = Boolean(guest.contact_number && guest.tamu_from)
                     const canCopyMessage = Boolean(invitationTemplates[searchableText(guest.tamu_from)])
+                    const canOpenInvitation = Boolean(guest.invitation_slug)
                     const disabledReason = !guest.contact_number
                       ? 'Nomor WhatsApp belum diisi'
                       : !guest.tamu_from
@@ -1264,6 +1291,26 @@ function Admin() {
                         </td>
                         <td data-label="Aksi Undangan">
                           <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
+                            {canOpenInvitation && (
+                              <a
+                                className="btn-pearl-capsule"
+                                href={getInvitationUrl(guest)}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                title={`Buka undangan ${guest.nama_tamu}`}
+                                style={{
+                                  fontSize: '12px',
+                                  padding: '6px 10px',
+                                  display: 'inline-flex',
+                                  alignItems: 'center',
+                                  gap: '5px',
+                                  textDecoration: 'none'
+                                }}
+                              >
+                                <Icon name="eye" size={13} />
+                                Buka Link
+                              </a>
+                            )}
                           <button
                             className="btn-pearl-capsule"
                             onClick={() => sendInvitation(guest)}
@@ -1290,7 +1337,7 @@ function Admin() {
                               onClick={() => copyInvitationMessage(guest)}
                               disabled={!canCopyMessage}
                               title={canCopyMessage
-                                ? 'Salin teks pesan tanpa QR'
+                                ? 'Salin teks pesan beserta link undangan'
                                 : 'Template pesan belum tersedia'}
                               style={{
                                 fontSize: '12px',

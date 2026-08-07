@@ -64,8 +64,11 @@ supabase secrets set \
   OPENWA_BASE_URL=https://openwa.maulanamalik.my.id/api \
   OPENWA_API_KEY=REPLACE_WITH_A_NEW_KEY \
   ADMIN_EMAILS=admin@example.com \
-  ALLOWED_ORIGINS=http://localhost:3000,https://invitation.example.com
+  ALLOWED_ORIGINS=http://localhost:3000,http://localhost:5173,https://adminweding.maulanamalik.my.id
 ```
+
+Lihat juga [`CORS_SETUP.md`](./CORS_SETUP.md) untuk command update dan tes
+preflight domain production. Tulis origin tanpa `/` di belakang.
 
 Optional settings:
 

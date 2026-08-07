@@ -34,11 +34,16 @@ const normalizePhone = (value) => {
   return digits
 }
 
-const renderTemplate = (template, guest, senderName) => template
+const invitationUrl = (guest, baseUrl) => guest.invitation_slug
+  ? `${baseUrl}/${encodeURIComponent(guest.invitation_slug)}`
+  : baseUrl
+
+const renderTemplate = (template, guest, senderName, baseUrl) => template
   .replaceAll('\\n', '\n')
   .replaceAll('{{nama_tamu}}', guest.nama_tamu || '')
   .replaceAll('{{alamat_tamu}}', guest.alamat_tamu || '')
   .replaceAll('{{tamu_from}}', senderName || guest.tamu_from || '')
+  .replaceAll('{{invitation_url}}', invitationUrl(guest, baseUrl))
 
 const parseOpenwaResponse = async (response) => {
   const responseText = await response.text()
@@ -114,6 +119,7 @@ Deno.serve(async (request) => {
   const serviceRoleKey = env('SUPABASE_SERVICE_ROLE_KEY')
   const openwaBaseUrl = env('OPENWA_BASE_URL').replace(/\/$/, '')
   const openwaApiKey = env('OPENWA_API_KEY')
+  const invitationBaseUrl = (env('INVITATION_BASE_URL') || 'https://anisa.maulanamalik.my.id').replace(/\/$/, '')
   const adminEmails = env('ADMIN_EMAILS')
     .split(',')
     .map(email => email.trim().toLowerCase())
@@ -417,7 +423,7 @@ Deno.serve(async (request) => {
 
   const { data: candidates, error: guestsError } = await supabaseAdmin
     .from('data_tamu')
-    .select('id, nama_tamu, alamat_tamu, contact_number, tamu_from')
+    .select('id, nama_tamu, alamat_tamu, contact_number, tamu_from, invitation_slug')
     .ilike('tamu_from', sender.name)
     .in('invitation_status', ['not_sent', 'failed'])
     .not('contact_number', 'is', null)
@@ -442,7 +448,7 @@ Deno.serve(async (request) => {
   candidates.forEach(guest => {
     try {
       const phone = normalizePhone(guest.contact_number)
-      const text = renderTemplate(messageConfig.message_template, guest, sender.name)
+      const text = renderTemplate(messageConfig.message_template, guest, sender.name, invitationBaseUrl)
       validGuests.push(guest)
       messages.push({
         chatId: `${phone}@c.us`,
