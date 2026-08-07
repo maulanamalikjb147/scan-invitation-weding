@@ -82,10 +82,12 @@ button, a { -webkit-tap-highlight-color: transparent; }
   background: #c5a059;
   color: #131410;
 }
-.segmented-button[data-tone="quiet"][data-active="true"] {
-  border-color: rgba(233,193,118,.8);
-  background: #0f3f35;
-  color: #f6f0dd;
+.segmented-button:disabled {
+  cursor: not-allowed;
+  border-color: rgba(255,255,255,.08);
+  background: rgba(255,255,255,.045);
+  color: rgba(228,227,219,.28);
+  transform: none;
 }
 .rsvp-panel {
   border-radius: 8px;

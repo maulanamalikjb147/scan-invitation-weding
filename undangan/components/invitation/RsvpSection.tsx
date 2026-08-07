@@ -14,6 +14,7 @@ export function RsvpSection() {
   const { register, handleSubmit, reset, setValue, watch, formState: { errors, isSubmitting } } = useForm<RsvpInput>({ defaultValues: { guests: 1, attendance: "hadir", message: "" } });
   const attendance = watch("attendance");
   const guests = Number(watch("guests")) || 1;
+  const guestSelectionDisabled = attendance === "tidak";
 
   const refresh = useCallback(async () => {
     try { setWishes(await listRsvps()); } catch { /* keep the invitation usable if the network is briefly unavailable */ }
@@ -42,7 +43,7 @@ export function RsvpSection() {
         <Reveal>
           <p className="eyebrow text-[#c5a059]">Konfirmasi kehadiran</p>
           <h2 className="font-display mt-3 text-4xl leading-[1.02] md:text-6xl">Bisakah kamu <span className="italic text-[#c5a059]">hadir?</span></h2>
-          <p className="mt-5 max-w-lg text-[0.96rem] leading-7 text-[#d1c5b4]">Konfirmasi kehadiran dan tinggalkan satu-dua kalimat yang nanti bisa kami baca lagi sambil tersenyum.</p>
+          <p className="mt-5 max-w-lg text-[0.96rem] leading-7 text-[#d1c5b4]">Berikan ucapan, harapan, dan konfirmasi kehadiran untuk hari bahagia kami.</p>
           <form onSubmit={handleSubmit(onSubmit)} className="rsvp-panel mt-7 space-y-6 p-4 md:p-6">
             <input type="hidden" {...register("attendance")} />
             <input type="hidden" {...register("guests", { valueAsNumber: true })} />
@@ -54,14 +55,26 @@ export function RsvpSection() {
             <div>
               <p className="font-display mb-3 text-center text-xl text-[#e4e3db]">Konfirmasi Kehadiran</p>
               <div className="grid grid-cols-2 gap-3">
-                <button type="button" className="segmented-button" data-tone="quiet" data-active={attendance === "hadir"} onClick={() => setValue("attendance", "hadir", { shouldDirty: true })}>Hadir</button>
-                <button type="button" className="segmented-button" data-tone="quiet" data-active={attendance === "tidak"} onClick={() => setValue("attendance", "tidak", { shouldDirty: true })}>Tidak Hadir</button>
+                <button type="button" className="segmented-button" data-active={attendance === "hadir"} onClick={() => setValue("attendance", "hadir", { shouldDirty: true })}>Hadir</button>
+                <button type="button" className="segmented-button" data-active={attendance === "tidak"} onClick={() => setValue("attendance", "tidak", { shouldDirty: true })}>Tidak Hadir</button>
               </div>
             </div>
             <div>
               <p className="font-display mb-3 flex items-center justify-center gap-2 text-xl text-[#e4e3db]"><UsersRound size={18} className="text-[#c5a059]" /> Jumlah Kehadiran</p>
               <div className="grid grid-cols-2 gap-3">
-                {[1, 2].map((value) => <button key={value} type="button" className="segmented-button" data-active={guests === value} onClick={() => setValue("guests", value, { shouldDirty: true })}>{value} Orang</button>)}
+                {[1, 2].map((value) => (
+                  <button
+                    key={value}
+                    type="button"
+                    className="segmented-button"
+                    data-active={!guestSelectionDisabled && guests === value}
+                    disabled={guestSelectionDisabled}
+                    aria-disabled={guestSelectionDisabled}
+                    onClick={() => setValue("guests", value, { shouldDirty: true })}
+                  >
+                    {value} Orang
+                  </button>
+                ))}
               </div>
             </div>
             <div>
@@ -78,7 +91,7 @@ export function RsvpSection() {
           <div className="flex items-center justify-between border-b border-white/10 pb-5"><div><p className="eyebrow text-[#c5a059]">Ucapan para tamu</p><h3 className="font-display mt-2 text-3xl">Doa dan harapan</h3></div><MessageSquareText className="text-white/30" /></div>
           <div className="mt-2 max-h-[420px] overflow-y-auto pr-2 md:max-h-[520px]">
             {wishes.length === 0 && <div className="py-16 text-center text-[#837c71]"><Heart className="mx-auto mb-4" size={28} /><p>Jadilah orang pertama yang meninggalkan ucapan.</p></div>}
-            {wishes.map((wish) => <article key={wish.id} className="border-b border-white/[.06] py-4"><div className="flex items-start justify-between gap-3"><h4 className="font-display text-base md:text-lg">{wish.name}</h4><span className="eyebrow shrink-0 border border-white/10 px-2 py-1 text-[8px] text-[#c5a059]">{wish.attendance === "hadir" ? "Hadir" : "Titip doa"}</span></div><p className="mt-2 text-[0.96rem] leading-6 text-[#d1c5b4]">{wish.message || "Semoga acaranya lancar dan penuh bahagia!"}</p></article>)}
+            {wishes.map((wish) => <article key={wish.id} className="border-b border-white/[.06] py-4"><h4 className="font-display text-base md:text-lg">{wish.name}</h4><p className="mt-2 text-[0.96rem] leading-6 text-[#d1c5b4]">{wish.message || "Semoga acaranya lancar dan penuh bahagia!"}</p></article>)}
           </div>
         </Reveal>
       </div>
