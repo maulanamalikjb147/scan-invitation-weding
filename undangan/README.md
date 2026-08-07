@@ -26,7 +26,9 @@ Tambahkan kedua variabel tersebut juga pada Environment Variables di Netlify.
 ## Struktur
 
 - `app/` — halaman utama dan endpoint RSVP
+- `app/admin/` — dashboard, scanner QR, dan monitor pengiriman bulk dalam deployment yang sama
 - `components/invitation/` — komponen setiap section undangan
+- `components/admin/` — komponen pengelolaan tamu dan check-in
 - `hooks/` — musik ambient interaktif
 - `lib/` — konfigurasi acara dan klien RSVP
 - `db/` + `drizzle/` — penyimpanan RSVP bawaan
