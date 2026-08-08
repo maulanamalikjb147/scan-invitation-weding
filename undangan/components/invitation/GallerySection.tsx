@@ -26,7 +26,7 @@ export function GallerySection() {
     <section id="gallery" className="section-rule relative overflow-hidden py-18 md:py-36">
       <SectionBackdrop src="/images/gambar7.jpg" position="object-[50%_42%]" strength="opacity-[.50]" />
       <div className="page-shell relative z-10">
-      <Reveal className="flex flex-col justify-between gap-5 md:flex-row md:items-end"><div><p className="eyebrow text-[#c5a059]">Gallery</p><h2 className="font-display mt-4 text-4xl md:text-7xl">Cerita dalam <span className="italic text-[#c5a059]">bingkai.</span></h2></div><p className="max-w-sm text-[#d1c5b4]">Beberapa momen kecil yang kami simpan sebagai bagian dari perjalanan menuju hari bahagia.</p></Reveal>
+      <Reveal><h2 className="font-display text-4xl md:text-7xl">Our moments</h2></Reveal>
       <div className="mt-12 grid grid-cols-2 gap-2 md:grid-cols-4 md:gap-3">
         {gallery.map((photo, index) => (
           <Reveal key={photo.src} delay={(index % 4) * .04} className={index === 0 || index === 7 || index === 12 ? "col-span-2 row-span-2" : ""}>

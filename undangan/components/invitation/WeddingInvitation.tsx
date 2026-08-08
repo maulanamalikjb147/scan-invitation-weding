@@ -12,7 +12,6 @@ import { GiftSection } from "./GiftSection";
 import { Hero } from "./Hero";
 import { QrPrelude } from "./QrPrelude";
 import { RsvpSection } from "./RsvpSection";
-import { StorySection } from "./StorySection";
 import type { WeddingGuest } from "@/lib/guest";
 
 const petals = [8, 19, 32, 47, 63, 76, 89];
@@ -39,9 +38,8 @@ export function WeddingInvitation({ guest }: { guest: WeddingGuest }) {
       <CoupleSection />
       <EventSection />
       <GallerySection />
-      <StorySection />
       <GiftSection />
-      <RsvpSection />
+      <RsvpSection guestName={guest.name} />
       <Footer />
       <FloatingControls playing={playing} onMusic={toggle} />
     </main>

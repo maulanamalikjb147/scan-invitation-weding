@@ -8,15 +8,11 @@ export function Footer() {
       <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(19,20,16,.80)_0%,rgba(19,20,16,.16)_35%,rgba(19,20,16,.76))]" />
       <div className="page-shell relative z-10 flex min-h-[78svh] flex-col items-center justify-end pb-28 text-center">
         <p className="eyebrow text-[#e9c176]">Terima kasih</p>
-        <h2 className="font-display mt-5 text-5xl leading-[.95] md:text-8xl">Anisa <span className="italic text-[#c5a059]">&</span> Maulana</h2>
+        <p className="mt-8 max-w-xl leading-7 text-[#d1c5b4]">Merupakan suatu kebahagiaan dan kehormatan bagi kami, apabila Bapak/Ibu/Saudara/i, berkenan hadir dan memberikan do&apos;a restu kepada kami.</p>
+        <p className="mt-7 text-sm text-[#d1c5b4]">Wassalamualaikum Warahmatullahi Wabarakatuh</p>
+        <p className="font-label mt-10 text-[11px] uppercase tracking-[.22em] text-white/60">kami yang berbahagia</p>
+        <h2 className="font-display mt-4 text-5xl leading-[.95] md:text-8xl">Anisa <span className="italic text-[#c5a059]">&</span> Maulana</h2>
         <p className="font-label mt-6 text-xs uppercase tracking-[.22em] text-white/60">{wedding.dateLabel}</p>
-        <p className="mt-10 max-w-lg italic text-[#d1c5b4]">Atas kehadiran dan doa restu Bapak/Ibu/Saudara/i sekalian, kami mengucapkan terima kasih. Semoga Allah membalas setiap kebaikan dengan keberkahan.</p>
-        <p className="mt-5 text-sm text-[#d1c5b4]">Wassalamualaikum Warahmatullahi Wabarakatuh</p>
-        <div className="mt-8 flex items-center gap-4" aria-label="Tagar pernikahan">
-          <span className="h-px w-8 bg-[#c5a059]/60" />
-          <p className="font-display text-xl italic tracking-wide text-[#e9c176] md:text-2xl">#roMAnSAsatuhati</p>
-          <span className="h-px w-8 bg-[#c5a059]/60" />
-        </div>
       </div>
     </footer>
   );

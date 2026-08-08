@@ -2,19 +2,23 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
-import { Check, Heart, LoaderCircle, MessageSquareText, UsersRound } from "lucide-react";
+import { Check, Heart, LoaderCircle, UsersRound } from "lucide-react";
 import { listRsvps, submitRsvp, type Rsvp, type RsvpInput } from "@/lib/rsvp-client";
 import { Reveal } from "./Reveal";
 import { SectionBackdrop } from "./SectionBackdrop";
 
-export function RsvpSection() {
+export function RsvpSection({ guestName }: { guestName: string }) {
   const [wishes, setWishes] = useState<Rsvp[]>([]);
   const [sent, setSent] = useState(false);
   const [error, setError] = useState("");
-  const { register, handleSubmit, reset, setValue, watch, formState: { errors, isSubmitting } } = useForm<RsvpInput>({ defaultValues: { guests: 1, attendance: "hadir", message: "" } });
+  const { register, handleSubmit, reset, setValue, watch, formState: { errors, isSubmitting } } = useForm<RsvpInput>({ defaultValues: { name: guestName, guests: 1, attendance: "hadir", message: "" } });
   const attendance = watch("attendance");
   const guests = Number(watch("guests")) || 1;
   const guestSelectionDisabled = attendance === "tidak";
+
+  useEffect(() => {
+    setValue("name", guestName, { shouldDirty: false });
+  }, [guestName, setValue]);
 
   const refresh = useCallback(async () => {
     try { setWishes(await listRsvps()); } catch { /* keep the invitation usable if the network is briefly unavailable */ }
@@ -30,7 +34,7 @@ export function RsvpSection() {
     try {
       await submitRsvp({ ...values, guests: Number(values.guests) });
       setSent(true);
-      reset();
+      reset({ name: guestName, guests: 1, attendance: "hadir", message: "" });
       await refresh();
       setTimeout(() => setSent(false), 4000);
     } catch (caught) { setError(caught instanceof Error ? caught.message : "Terjadi kesalahan"); }
@@ -41,9 +45,8 @@ export function RsvpSection() {
       <SectionBackdrop src="/images/gambar9.jpg" position="object-[50%_48%]" strength="opacity-[.58]" />
       <div className="page-shell relative z-10 grid gap-8 lg:grid-cols-[.88fr_1.12fr] lg:gap-12">
         <Reveal>
-          <p className="eyebrow text-[#c5a059]">Ucapan dan doa</p>
-          <h2 className="font-display mt-3 text-4xl leading-[1.02] md:text-6xl">Kirim ucapan & <span className="italic text-[#c5a059]">konfirmasi.</span></h2>
-          <p className="mt-5 max-w-lg text-[0.96rem] leading-7 text-[#d1c5b4]">Berikan ucapan, harapan, dan konfirmasi kehadiran untuk hari bahagia kami.</p>
+          <h2 className="font-display text-4xl leading-[1.02] md:text-6xl">Wedding wish</h2>
+          <p className="mt-5 max-w-lg text-[0.96rem] leading-7 text-[#d1c5b4]">Berikan doa dan ucapan terbaik untuk kami.</p>
           <form onSubmit={handleSubmit(onSubmit)} className="rsvp-panel mt-7 space-y-6 p-4 md:p-6">
             <input type="hidden" {...register("attendance")} />
             <input type="hidden" {...register("guests", { valueAsNumber: true })} />
@@ -87,11 +90,10 @@ export function RsvpSection() {
             <button disabled={isSubmitting} className="font-label inline-flex min-h-12 w-full items-center justify-center gap-3 rounded-full bg-[#c5a059] px-6 text-xs font-semibold uppercase tracking-[.14em] text-[#131410] transition hover:bg-[#e9c176] disabled:opacity-50">{isSubmitting ? <LoaderCircle className="animate-spin" size={17} /> : <Heart size={17} />} Confirm</button>
           </form>
         </Reveal>
-        <Reveal delay={.1} className="min-h-[420px] rounded-[8px] border border-white/10 bg-[#1b1c18]/92 p-4 md:p-7">
-          <div className="flex items-center justify-between border-b border-white/10 pb-5"><div><p className="eyebrow text-[#c5a059]">Ucapan para tamu</p><h3 className="font-display mt-2 text-3xl">Doa dan harapan</h3></div><MessageSquareText className="text-white/30" /></div>
-          <div className="mt-2 max-h-[420px] overflow-y-auto pr-2 md:max-h-[520px]">
+        <Reveal delay={.1} className="rounded-[8px] border border-white/10 bg-[#1b1c18]/92 p-4 md:p-5">
+          <div className="max-h-[356px] overflow-y-auto pr-2">
             {wishes.length === 0 && <div className="py-16 text-center text-[#837c71]"><Heart className="mx-auto mb-4" size={28} /><p>Jadilah orang pertama yang meninggalkan ucapan.</p></div>}
-            {wishes.map((wish) => <article key={wish.id} className="border-b border-white/[.06] py-4"><h4 className="font-display text-base md:text-lg">{wish.name}</h4><p className="mt-2 text-[0.96rem] leading-6 text-[#d1c5b4]">{wish.message || "Semoga acaranya lancar dan penuh bahagia!"}</p></article>)}
+            {wishes.map((wish) => <article key={wish.id} className="border-b border-white/[.06] py-3 last:border-0"><h4 className="font-display text-base">{wish.name}</h4><p className="mt-1 text-sm leading-6 text-[#d1c5b4]">{wish.message || "Semoga acaranya lancar dan penuh bahagia!"}</p></article>)}
           </div>
         </Reveal>
       </div>
