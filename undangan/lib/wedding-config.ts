@@ -11,7 +11,7 @@ export const wedding = {
   bride: {
     shortName: "Anisa",
     fullName: "Anisa Syafitri, S.Sos.",
-    parents: "Putri tercinta dari Bapak Oman Moch. Chotman & Ibu Udah Hamidah",
+    parents: "Putri tercinta dari Bapak Oman Moch. Chotman & Ibu Idah Hamidah",
     image: "/images/cpw.JPG",
   },
   events: [

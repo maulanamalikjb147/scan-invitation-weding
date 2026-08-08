@@ -10,10 +10,9 @@ export function Hero() {
         <h1 className="font-display max-w-4xl text-[clamp(3.1rem,9.5vw,8.5rem)] leading-[.9]">The Wedding of Anisa and Maulana</h1>
         <div className="mt-7 flex items-center gap-4" aria-label="Tagar pernikahan">
           <span className="h-px w-10 bg-[#c5a059]/70" />
-          <p className="font-display text-2xl italic tracking-wide text-[#e9c176] md:text-3xl">#AnisaMaulana</p>
+          <p className="font-display text-2xl italic tracking-wide text-[#e9c176] md:text-3xl">#roMAnSAsatuhati</p>
         </div>
       </div>
-      <a href="#couple" aria-label="Lanjut ke profil mempelai" className="absolute bottom-7 right-5 z-10 flex items-center gap-2 font-label text-[9px] uppercase tracking-[.16em] text-white/55 md:right-16 md:text-[10px] md:tracking-[.2em]">Geser <ChevronDown className="animate-bounce text-[#c5a059]" size={18} /></a>
     </section>
   );
 }
