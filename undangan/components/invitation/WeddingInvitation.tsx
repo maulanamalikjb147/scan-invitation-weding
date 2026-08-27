@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import { useState } from "react";
 import { useAmbientMusic } from "@/hooks/useAmbientMusic";
 import { Cover } from "./Cover";
@@ -30,18 +31,31 @@ export function WeddingInvitation({ guest }: { guest: WeddingGuest }) {
     setTimeout(() => document.querySelector("#home")?.scrollIntoView({ behavior: "smooth" }), 300);
   };
   return (
-    <main>
-      <QrPrelude guest={guest} open={qrOpen} onContinue={continueToInvitation} />
-      <Cover open={coverOpen} onOpen={openInvitation} guestName={guest.name} />
-      <div aria-hidden="true">{petals.map((left, index) => <span key={left} className="petal" style={{ left: `${left}%`, animationDuration: `${10 + index * 1.35}s`, animationDelay: `${-index * 1.7}s` }} />)}</div>
-      <Hero />
-      <CoupleSection />
-      <EventSection />
-      <GallerySection />
-      <GiftSection />
-      <RsvpSection guestName={guest.name} />
-      <Footer />
-      <FloatingControls playing={playing} onMusic={toggle} />
-    </main>
+    <div className="invitation-desktop-shell">
+      <aside className="invitation-photo-panel" aria-hidden="true">
+        <Image
+          src="/images/gambar1.jpg"
+          alt=""
+          fill
+          priority
+          sizes="(min-width: 1024px) 61vw, 0px"
+          className="object-cover object-[50%_48%]"
+        />
+        <div className="absolute inset-0 bg-[linear-gradient(90deg,rgba(10,10,8,.16),rgba(10,10,8,.02)_42%,rgba(10,10,8,.18))]" />
+      </aside>
+      <main className="invitation-phone-panel">
+        <QrPrelude guest={guest} open={qrOpen} onContinue={continueToInvitation} />
+        <Cover open={coverOpen} onOpen={openInvitation} guestName={guest.name} />
+        <div aria-hidden="true">{petals.map((left, index) => <span key={left} className="petal" style={{ left: `${left}%`, animationDuration: `${10 + index * 1.35}s`, animationDelay: `${-index * 1.7}s` }} />)}</div>
+        <Hero />
+        <CoupleSection />
+        <EventSection />
+        <GallerySection />
+        <GiftSection />
+        <RsvpSection guestName={guest.name} />
+        <Footer />
+        <FloatingControls playing={playing} onMusic={toggle} />
+      </main>
+    </div>
   );
 }

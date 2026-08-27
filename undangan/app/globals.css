@@ -119,9 +119,123 @@ button, a { -webkit-tap-highlight-color: transparent; }
   50% { transform: scaleY(1); }
 }
 .music-bar { transform-origin: bottom; animation: equalize .8s ease-in-out infinite; }
+.invitation-photo-panel { display: none; }
+.invitation-floating-nav {
+  left: 50%;
+  translate: -50% 0;
+}
 @media (min-width: 768px) {
   body { font-size: 16px; }
   .page-shell { width: min(100% - 128px, 1200px); }
+}
+@media (min-width: 1024px) {
+  body:has(.invitation-desktop-shell) {
+    overflow: hidden;
+    background: #0a0a08;
+  }
+
+  .invitation-desktop-shell {
+    --invitation-panel-width: clamp(390px, 30vw, 430px);
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) var(--invitation-panel-width);
+    min-height: 100svh;
+    background: #0a0a08;
+  }
+
+  .invitation-photo-panel {
+    display: block;
+    position: sticky;
+    top: 0;
+    height: 100svh;
+    overflow: hidden;
+    background: #0a0a08;
+  }
+
+  .invitation-phone-panel {
+    position: relative;
+    height: 100svh;
+    overflow-x: hidden;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    background: var(--ink);
+    box-shadow: -22px 0 55px rgba(0,0,0,.36);
+  }
+
+  .invitation-phone-panel .page-shell {
+    width: min(100% - 32px, 390px);
+  }
+
+  .invitation-phone-panel #home .page-shell {
+    justify-content: flex-end;
+    padding-top: 6rem;
+    padding-bottom: 6rem;
+  }
+
+  .invitation-phone-panel #home h1 {
+    max-width: 360px;
+    font-size: 3.1rem;
+    line-height: .9;
+  }
+
+  .invitation-phone-panel #home .font-display.text-2xl {
+    font-size: 1.5rem;
+  }
+
+  .invitation-phone-panel .invitation-panel-overlay h1 {
+    font-size: 3.05rem;
+    line-height: .82;
+  }
+
+  .invitation-phone-panel .invitation-panel-overlay .md\:py-12 {
+    padding-top: 1.75rem;
+    padding-bottom: 1.75rem;
+  }
+
+  .invitation-phone-panel .invitation-panel-overlay .md\:text-xl {
+    font-size: 1.125rem;
+    line-height: 1.75rem;
+  }
+
+  .invitation-phone-panel .invitation-panel-overlay .md\:text-xs {
+    font-size: .75rem;
+    line-height: 1rem;
+  }
+
+  .invitation-phone-panel .invitation-panel-overlay .md\:tracking-\[\.28em\] {
+    letter-spacing: .2em;
+  }
+
+  .invitation-phone-panel .invitation-panel-overlay .md\:px-7 {
+    padding-left: 1.5rem;
+    padding-right: 1.5rem;
+  }
+
+  .invitation-phone-panel .invitation-panel-overlay .md\:tracking-\[\.16em\] {
+    letter-spacing: .13em;
+  }
+
+  .invitation-phone-panel .petal {
+    display: none;
+  }
+
+  .invitation-panel-overlay {
+    right: 0;
+    left: auto;
+    width: var(--invitation-panel-width);
+  }
+
+  .invitation-floating-nav {
+    left: auto;
+    right: 16px;
+    width: calc(var(--invitation-panel-width) - 32px);
+    max-width: calc(var(--invitation-panel-width) - 32px);
+    translate: initial;
+    transform: none;
+  }
+
+  .invitation-music-button {
+    right: 18px;
+  }
 }
 @media (max-width: 380px) {
   .page-shell { width: min(100% - 24px, 1200px); }

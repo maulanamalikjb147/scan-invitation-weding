@@ -48,7 +48,7 @@ export function QrPrelude({
     <AnimatePresence>
       {open && (
         <motion.div
-          className="fixed inset-0 z-[60] overflow-hidden bg-[#131410]"
+          className="invitation-panel-overlay fixed inset-0 z-[60] overflow-hidden bg-[#131410]"
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
