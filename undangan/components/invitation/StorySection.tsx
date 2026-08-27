@@ -1,8 +1,9 @@
 import { HeartHandshake } from "lucide-react";
+import type { CmsContent } from "@/lib/cms";
 import { Reveal } from "./Reveal";
 import { SectionBackdrop } from "./SectionBackdrop";
 
-const stories = [
+const fallbackStories = [
   {
     title: "Awal Pertemuan",
     body: "Setiap perjalanan punya cara indahnya sendiri untuk dimulai. Dari pertemuan sederhana, Allah menumbuhkan rasa saling mengenal, saling memahami, dan saling menguatkan.",
@@ -17,7 +18,8 @@ const stories = [
   },
 ];
 
-export function StorySection() {
+export function StorySection({ cms }: { cms?: CmsContent }) {
+  const stories = cms?.stories?.length ? cms.stories : fallbackStories;
   return (
     <section id="story" className="section-rule relative overflow-hidden py-18 md:py-36">
       <SectionBackdrop src="/images/gambar8.jpg" position="object-[50%_46%]" strength="opacity-[.52]" />

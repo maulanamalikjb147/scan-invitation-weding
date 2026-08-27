@@ -6,9 +6,10 @@ export function useAmbientMusic() {
   const [playing, setPlaying] = useState(false);
   const audioRef = useRef<HTMLAudioElement | null>(null);
 
-  const getAudio = useCallback(() => {
+  const getAudio = useCallback((src?: string) => {
+    const desired = src || "/music.mp3";
     if (!audioRef.current) {
-      const audio = new Audio("/music.mp3");
+      const audio = new Audio(desired);
       audio.loop = true;
       audio.preload = "auto";
       audio.volume = 0.45;
@@ -17,8 +18,12 @@ export function useAmbientMusic() {
     return audioRef.current;
   }, []);
 
-  const start = useCallback(async () => {
-    const audio = getAudio();
+  const start = useCallback(async (src?: string) => {
+    const audio = getAudio(src);
+    if (src && !audio.src.includes(src.split("/").pop() || src)) {
+      // only update if src actually different (handles absolute vs relative)
+      try { audio.src = src; audio.load(); } catch {}
+    }
     try {
       await audio.play();
       setPlaying(true);
@@ -34,7 +39,7 @@ export function useAmbientMusic() {
     setPlaying(false);
   }, []);
 
-  const toggle = useCallback(() => playing ? pause() : void start(), [pause, playing, start]);
+  const toggle = useCallback((src?: string) => playing ? pause() : void start(src), [pause, playing, start]);
 
   useEffect(() => () => {
     if (audioRef.current) {

@@ -1,17 +1,13 @@
 import Image from "next/image";
-import { wedding } from "@/lib/wedding-config";
+import type { CmsContent } from "@/lib/cms";
 import { Reveal } from "./Reveal";
 import { SectionBackdrop } from "./SectionBackdrop";
 
-function PersonCard({
-  person,
-}: {
-  person: typeof wedding.groom | typeof wedding.bride;
-}) {
+function PersonCard({ person }: { person: { fullName: string; parents: string; image: string } }) {
   return (
     <Reveal className="grid gap-6 md:grid-cols-[1fr_.78fr] md:items-end">
       <div className="group relative aspect-[4/5] overflow-hidden rounded-[8px] border border-white/10 bg-[#1b1c18]">
-        <Image src={person.image} alt={person.fullName} fill sizes="(max-width: 768px) 100vw, 45vw" className="object-cover transition duration-700 group-hover:scale-[1.025]" />
+        <Image src={person.image} alt={person.fullName} fill sizes="(max-width: 768px) 100vw, 45vw" unoptimized={person.image.startsWith("data:") || person.image.startsWith("http")} className="object-cover transition duration-700 group-hover:scale-[1.025]" />
         <div className="absolute inset-0 bg-gradient-to-t from-[#131410]/65 via-transparent to-transparent" />
       </div>
       <div className="pb-3">
@@ -22,22 +18,27 @@ function PersonCard({
   );
 }
 
-export function CoupleSection() {
+export function CoupleSection({ cms }: { cms?: CmsContent }) {
+  const bride = cms?.bride || { shortName: "Anisa", fullName: "Anisa Syafitri, S.Sos.", parents: "Putri tercinta dari Bapak Oman Moch. Chotman & Ibu Idah Hamidah", image: "/images/cpw.JPG" };
+  const groom = cms?.groom || { shortName: "Maulana", fullName: "Maulana Malik Jabbar Budianto, S.Kom.", parents: "Putra tercinta dari Bapak Budiana Shaleh S.SOS & Ibu Enun Nurhayati", image: "/images/cpp.png" };
+  const quoteAr = cms?.quoteAr || "وَمِنْ آيَاتِهِ أَنْ خَلَقَ لَكُمْ مِنْ أَنْفُسِكُمْ أَزْوَاجًا لِتَسْكُنُوا إِلَيْهَا وَجَعَلَ بَيْنَكُمْ مَوَدَّةً وَرَحْمَةً ۚ إِنَّ فِي ذَٰلِكَ لَآيَاتٍ لِقَوْمٍ يَتَفَكَّرُونَ";
+  const quoteTranslation = cms?.quoteTranslation || "Dan di antara tanda-tanda kebesaran-Nya ialah Dia menciptakan pasangan-pasangan untukmu dari jenismu sendiri, agar kamu cenderung dan merasa tenteram kepadanya, dan Dia menjadikan di antaramu rasa kasih dan sayang. Sungguh, pada yang demikian itu benar-benar terdapat tanda-tanda kebesaran Allah bagi kaum yang berpikir.";
+  const quoteSource = cms?.quoteSource || "(QS. Ar-Rum: 21)";
   return (
     <section id="couple" className="section-rule relative overflow-hidden py-18 md:py-36">
       <SectionBackdrop src="/images/gambar6.jpg" position="object-[50%_44%]" strength="opacity-[.58]" />
       <div className="page-shell relative z-10">
         <Reveal className="mx-auto mb-14 max-w-3xl rounded-[8px] border border-white/10 bg-[#1b1c18]/88 p-5 text-center md:p-7">
-          <p dir="rtl" lang="ar" className="font-display text-[1.35rem] leading-[2.05] text-[#e4e3db] md:text-3xl">وَمِنْ آيَاتِهِ أَنْ خَلَقَ لَكُمْ مِنْ أَنْفُسِكُمْ أَزْوَاجًا لِتَسْكُنُوا إِلَيْهَا وَجَعَلَ بَيْنَكُمْ مَوَدَّةً وَرَحْمَةً ۚ إِنَّ فِي ذَٰلِكَ لَآيَاتٍ لِقَوْمٍ يَتَفَكَّرُونَ</p>
-          <p className="mt-6 text-sm leading-7 text-[#d1c5b4] md:text-base">Dan di antara tanda-tanda kebesaran-Nya ialah Dia menciptakan pasangan-pasangan untukmu dari jenismu sendiri, agar kamu cenderung dan merasa tenteram kepadanya, dan Dia menjadikan di antaramu rasa kasih dan sayang. Sungguh, pada yang demikian itu benar-benar terdapat tanda-tanda kebesaran Allah bagi kaum yang berpikir.</p>
-          <p className="mt-6 text-sm leading-7 text-[#d1c5b4] md:text-base">(QS. Ar-Rum: 21)</p>
+          <p dir="rtl" lang="ar" className="font-display text-[1.35rem] leading-[2.05] text-[#e4e3db] md:text-3xl">{quoteAr}</p>
+          <p className="mt-6 text-sm leading-7 text-[#d1c5b4] md:text-base">{quoteTranslation}</p>
+          <p className="mt-6 text-sm leading-7 text-[#d1c5b4] md:text-base">{quoteSource}</p>
           {/*<p className="mx-auto mt-6 max-w-2xl text-[0.92rem] leading-7 text-[#e4e3db] md:text-base">Dan di antara tanda-tanda kebesaran-Nya ialah Dia menciptakan pasangan-pasangan untukmu dari jenismu sendiri, agar kamu cenderung dan merasa tenteram kepadanya, dan Dia menjadikan di antaramu rasa kasih dan sayang. Sungguh, pada yang demikian itu benar-benar terdapat tanda-tanda kebesaran Allah bagi kaum yang berpikir.</p>*/}
           {/*<p className="mx-auto mt-6 max-w-2xl text-[0.92rem] leading-7 text-[#e4e3db] md:text-base">(QS. Ar-Rum: 21)</p>*/}
         </Reveal>
         <Reveal className="mx-auto mb-12 max-w-3xl text-center">
           <p className="font-display text-xl text-[#e9c176] md:text-2xl">Assalamualaikum Warahmatullahi Wabarakatuh</p>
         </Reveal>
-        <div className="grid gap-16 lg:grid-cols-2 lg:gap-10"><PersonCard person={wedding.bride} /><PersonCard person={wedding.groom} /></div>
+        <div className="grid gap-16 lg:grid-cols-2 lg:gap-10"><PersonCard person={bride} /><PersonCard person={groom} /></div>
       </div>
     </section>
   );
