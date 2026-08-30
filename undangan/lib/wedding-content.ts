@@ -25,6 +25,27 @@ export type WeddingPhoto = {
   alt: string;
 };
 
+export type WeddingStory = {
+  title: string;
+  body: string;
+  image: string;
+};
+
+export const weddingSectionIds = ["hero", "couple", "story", "event", "gallery", "gift", "rsvp", "footer"] as const;
+export type WeddingSectionId = (typeof weddingSectionIds)[number];
+
+export type WeddingSectionSettings = {
+  id: WeddingSectionId;
+  name: string;
+  order: number;
+  visible: boolean;
+  title: string;
+  body: string;
+  titleFontSize: number;
+  bodyFontSize: number;
+  background: string;
+};
+
 export type WeddingImages = {
   cover: string;
   desktopSide: string;
@@ -47,8 +68,21 @@ export type WeddingContent = {
   events: WeddingEvent[];
   gifts: WeddingGift[];
   gallery: WeddingPhoto[];
+  stories: WeddingStory[];
+  sections: WeddingSectionSettings[];
   images: WeddingImages;
 };
+
+export const defaultWeddingSections: WeddingSectionSettings[] = [
+  { id: "hero", name: "Pembuka", order: 0, visible: true, title: "", body: "", titleFontSize: 64, bodyFontSize: 24, background: "/images/gambar1.jpg" },
+  { id: "couple", name: "Mempelai", order: 1, visible: true, title: "Assalamualaikum Warahmatullahi Wabarakatuh", body: "Dan di antara tanda-tanda kebesaran-Nya ialah Dia menciptakan pasangan-pasangan untukmu dari jenismu sendiri, agar kamu cenderung dan merasa tenteram kepadanya, dan Dia menjadikan di antaramu rasa kasih dan sayang.", titleFontSize: 28, bodyFontSize: 16, background: "/images/gambar6.jpg" },
+  { id: "story", name: "Kisah Kami", order: 2, visible: true, title: "Love Story", body: "", titleFontSize: 48, bodyFontSize: 18, background: "/images/gambar8.jpg" },
+  { id: "event", name: "Acara", order: 3, visible: true, title: "Save the date", body: "", titleFontSize: 56, bodyFontSize: 16, background: "/images/gambar4.jpg" },
+  { id: "gallery", name: "Galeri", order: 4, visible: true, title: "Gallery", body: "", titleFontSize: 64, bodyFontSize: 16, background: "/images/gambar7.jpg" },
+  { id: "gift", name: "Hadiah", order: 5, visible: true, title: "Doa restu adalah hadiah terbaik.", body: "Jika memberi adalah ungkapan tanda kasih, Anda dapat memberi melalui pilihan di bawah ini.", titleFontSize: 52, bodyFontSize: 16, background: "/images/gambar5.jpg" },
+  { id: "rsvp", name: "RSVP & Ucapan", order: 6, visible: true, title: "Wedding wish", body: "Berikan doa dan ucapan terbaik untuk kami.", titleFontSize: 52, bodyFontSize: 16, background: "/images/gambar9.jpg" },
+  { id: "footer", name: "Penutup", order: 7, visible: true, title: "", body: "", titleFontSize: 48, bodyFontSize: 16, background: "/images/gambar11.jpg" },
+];
 
 export const defaultWeddingContent: WeddingContent = {
   ...wedding,
@@ -66,6 +100,12 @@ export const defaultWeddingContent: WeddingContent = {
   events: wedding.events.map((event) => ({ ...event })),
   gifts: wedding.gifts.map((gift) => ({ ...gift })),
   gallery: gallery.map((photo) => ({ ...photo })),
+  stories: [
+    { title: "Awal Pertemuan", body: "Setiap perjalanan punya cara indahnya sendiri untuk dimulai. Dari pertemuan sederhana, Allah menumbuhkan rasa saling mengenal, saling memahami, dan saling menguatkan.", image: "/images/gambar8.jpg" },
+    { title: "Langkah Pertama", body: "Dengan niat baik dan restu keluarga, kami melangkah lebih dekat. Bukan hanya tentang dua hati, tetapi juga tentang dua keluarga yang dipertemukan dalam doa.", image: "/images/gambar10.jpg" },
+    { title: "Menuju Selamanya", body: "Hari ini menjadi awal dari perjalanan baru. Semoga Allah menjadikan rumah tangga kami penuh sakinah, mawaddah, warahmah, serta keberkahan di setiap langkah.", image: "/images/gambar11.jpg" },
+  ],
+  sections: defaultWeddingSections.map((section) => ({ ...section })),
 };
 
 function isRecord(value: unknown): value is Record<string, unknown> {
@@ -125,8 +165,67 @@ function mergeGallery(value: unknown, fallback: WeddingPhoto[]) {
   return photos.length ? photos : fallback;
 }
 
+function numberValue(value: unknown, fallback: number, min: number, max: number) {
+  return typeof value === "number" && Number.isFinite(value)
+    ? Math.min(max, Math.max(min, value))
+    : fallback;
+}
+
+function mergeStories(value: unknown, fallback: WeddingStory[]) {
+  if (!Array.isArray(value) || value.length === 0) return fallback;
+  const stories = value.map((story, index) => {
+    const source = isRecord(story) ? story : {};
+    const base = fallback[index] || { title: `Cerita ${index + 1}`, body: "", image: fallback[0].image };
+    return {
+      title: stringValue(source.title, base.title),
+      body: stringValue(source.body, base.body),
+      image: stringValue(source.image, base.image),
+    };
+  });
+  return stories.length ? stories : fallback;
+}
+
+function mergeSections(value: unknown, images: WeddingImages): WeddingSectionSettings[] {
+  const supplied = Array.isArray(value) ? value.filter(isRecord) : [];
+  const legacyBackgrounds: Partial<Record<WeddingSectionId, string>> = {
+    hero: images.hero,
+    couple: images.coupleBackdrop,
+    event: images.eventBackdrop,
+    gallery: images.galleryBackdrop,
+    gift: images.giftBackdrop,
+    footer: images.footer,
+  };
+  return defaultWeddingSections.map((fallback) => {
+    const source = supplied.find((section) => section.id === fallback.id);
+    const fallbackBackground = legacyBackgrounds[fallback.id] || fallback.background;
+    if (!source) return { ...fallback, background: fallbackBackground };
+    return {
+      id: fallback.id,
+      name: stringValue(source.name, fallback.name),
+      order: numberValue(source.order, fallback.order, 0, defaultWeddingSections.length - 1),
+      visible: typeof source.visible === "boolean" ? source.visible : fallback.visible,
+      title: typeof source.title === "string" ? source.title : fallback.title,
+      body: typeof source.body === "string" ? source.body : fallback.body,
+      titleFontSize: numberValue(source.titleFontSize, fallback.titleFontSize, 20, 96),
+      bodyFontSize: numberValue(source.bodyFontSize, fallback.bodyFontSize, 12, 32),
+      background: stringValue(source.background, fallbackBackground),
+    };
+  }).sort((a, b) => a.order - b.order).map((section, order) => ({ ...section, order }));
+}
+
+export function getWeddingSection(content: WeddingContent, id: WeddingSectionId) {
+  return content.sections.find((section) => section.id === id)
+    || defaultWeddingSections.find((section) => section.id === id)!;
+}
+
 export function mergeWeddingContent(value: unknown): WeddingContent {
   if (!isRecord(value)) return defaultWeddingContent;
+  const images = {
+    ...defaultWeddingContent.images,
+    ...(isRecord(value.images) ? Object.fromEntries(
+      Object.entries(value.images).filter(([, image]) => typeof image === "string" && image.trim())
+    ) : {}),
+  } as WeddingImages;
   return {
     shortNames: stringValue(value.shortNames, defaultWeddingContent.shortNames),
     date: stringValue(value.date, defaultWeddingContent.date),
@@ -138,12 +237,9 @@ export function mergeWeddingContent(value: unknown): WeddingContent {
     events: mergeEvents(value.events, defaultWeddingContent.events),
     gifts: mergeGifts(value.gifts, defaultWeddingContent.gifts),
     gallery: mergeGallery(value.gallery, defaultWeddingContent.gallery),
-    images: {
-      ...defaultWeddingContent.images,
-      ...(isRecord(value.images) ? Object.fromEntries(
-        Object.entries(value.images).filter(([, image]) => typeof image === "string" && image.trim())
-      ) : {}),
-    },
+    stories: mergeStories(value.stories, defaultWeddingContent.stories),
+    sections: mergeSections(value.sections, images),
+    images,
   };
 }
 

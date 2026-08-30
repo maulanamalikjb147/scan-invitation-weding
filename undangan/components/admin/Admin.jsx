@@ -9,8 +9,10 @@ import Icon from './Icon'
 
 const Link = ({ to, ...props }) => <NextLink href={to} {...props} />
 
-const QR_BUCKET = 'assets-devaq'
-const QR_PREFIX = 'wedding-scan'
+const QR_BUCKET = 'wedding-assets'
+const QR_PREFIX = 'qr/wedding-scan'
+const LEGACY_QR_BUCKET = 'assets-devaq'
+const LEGACY_QR_PREFIX = 'wedding-scan'
 const INVITATION_BASE_URL = (
   process.env.NEXT_PUBLIC_INVITATION_BASE_URL ||
   'https://anisa.maulanamalik.my.id'
@@ -232,6 +234,11 @@ function Admin() {
   const generateQRCode = async (guest) => {
     setGenerating(true)
     try {
+      const { data: sessionData, error: sessionError } = await supabase.auth.refreshSession()
+      if (sessionError || !sessionData.session) {
+        throw new Error('Sesi admin sudah berakhir. Silakan logout lalu login kembali.')
+      }
+
       const qrData = JSON.stringify({
         id: guest.id,
         nama_tamu: guest.nama_tamu,
@@ -260,9 +267,11 @@ function Admin() {
 
       if (uploadError) throw uploadError
 
+      const { data: qrUrlData } = supabase.storage.from(QR_BUCKET).getPublicUrl(fileName)
+
       const { error: updateError } = await supabase
         .from('data_tamu')
-        .update({ is_generated: true })
+        .update({ is_generated: true, qr_code_url: qrUrlData.publicUrl })
         .eq('id', guest.id)
 
       if (updateError) throw updateError
@@ -273,7 +282,8 @@ function Admin() {
       setTimeout(() => setSuccess(null), 3000)
     } catch (err) {
       console.error('Error generating QR code:', err)
-      setError('Gagal generate QR code: ' + err.message)
+      const message = err instanceof Error ? err.message : String(err)
+      setError('Gagal generate QR code: ' + message)
       setTimeout(() => setError(null), 5000)
     } finally {
       setGenerating(false)
@@ -620,7 +630,7 @@ function Admin() {
       // Upload the bulk CSV file itself to S3 bucket
       if (uploadedFile) {
         const fileExtension = uploadedFile.name.split('.').pop() || 'csv'
-        // Save to /assets-devaq/wedding-scan/template/data/bulk_[timestamp].[ext]
+        // Save bulk source files alongside QR assets in wedding-assets.
         const storagePath = `${QR_PREFIX}/template/data/bulk_${Date.now()}.${fileExtension}`
         const { error: uploadError } = await supabase.storage
           .from(QR_BUCKET)
@@ -715,9 +725,10 @@ function Admin() {
     }
   }
 
-  const getQRCodeUrl = (id, isGenerated) => {
-    if (!isGenerated) return null
-    const { data } = supabase.storage.from(QR_BUCKET).getPublicUrl(`${QR_PREFIX}/${id}.png`)
+  const getQRCodeUrl = (guest) => {
+    if (!guest.is_generated) return null
+    if (guest.qr_code_url) return guest.qr_code_url
+    const { data } = supabase.storage.from(LEGACY_QR_BUCKET).getPublicUrl(`${LEGACY_QR_PREFIX}/${guest.id}.png`)
     return data.publicUrl
   }
 
@@ -1252,12 +1263,12 @@ function Admin() {
                         <td data-label="QR">
                           {guest.is_generated ? (
                             <a
-                              href={getQRCodeUrl(guest.id, guest.is_generated)}
+                              href={getQRCodeUrl(guest)}
                               target="_blank"
                               rel="noopener noreferrer"
                             >
                               <img
-                                src={getQRCodeUrl(guest.id, guest.is_generated)}
+                                src={getQRCodeUrl(guest)}
                                 alt="QR Code"
                                 className="qr-image"
                               />

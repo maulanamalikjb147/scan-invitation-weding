@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { headers } from "next/headers";
+import Script from "next/script";
 import "./globals.css";
 
 export async function generateMetadata(): Promise<Metadata> {
@@ -38,8 +39,47 @@ export async function generateMetadata(): Promise<Metadata> {
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   return (
-    <html lang="id">
-      <body>{children}</body>
+    <html lang="id" suppressHydrationWarning data-scroll-behavior="smooth">
+      <body suppressHydrationWarning>
+        <Script id="strip-extension-hydration-attrs" strategy="beforeInteractive">
+          {`
+            (() => {
+              const extensionAttributePattern = /^(bis_|cz-shortcut-listen$)/;
+              const stripExtensionAttributes = (root = document.documentElement) => {
+                if (!root) return;
+                const elements = root.nodeType === 1 ? [root, ...root.querySelectorAll("*")] : [];
+                for (const element of elements) {
+                  for (const attribute of [...element.attributes]) {
+                    if (extensionAttributePattern.test(attribute.name)) {
+                      element.removeAttribute(attribute.name);
+                    }
+                  }
+                }
+              };
+
+              stripExtensionAttributes();
+              const observer = new MutationObserver((mutations) => {
+                for (const mutation of mutations) {
+                  if (mutation.type === "attributes" && extensionAttributePattern.test(mutation.attributeName || "")) {
+                    mutation.target.removeAttribute(mutation.attributeName);
+                  }
+                  for (const node of mutation.addedNodes) {
+                    stripExtensionAttributes(node);
+                  }
+                }
+              });
+
+              observer.observe(document.documentElement, {
+                attributes: true,
+                childList: true,
+                subtree: true,
+              });
+              window.addEventListener("load", () => setTimeout(() => observer.disconnect(), 5000), { once: true });
+            })();
+          `}
+        </Script>
+        {children}
+      </body>
     </html>
   );
 }

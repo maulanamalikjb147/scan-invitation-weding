@@ -13,6 +13,7 @@ import { GiftSection } from "./GiftSection";
 import { Hero } from "./Hero";
 import { QrPrelude } from "./QrPrelude";
 import { RsvpSection } from "./RsvpSection";
+import { StorySection } from "./StorySection";
 import type { WeddingGuest } from "@/lib/guest";
 import { defaultWeddingContent, type WeddingContent } from "@/lib/wedding-content";
 
@@ -31,6 +32,21 @@ export function WeddingInvitation({ guest, content = defaultWeddingContent }: { 
     setQrOpen(false);
     setTimeout(() => document.querySelector("#home")?.scrollIntoView({ behavior: "smooth" }), 300);
   };
+  const orderedSections = [...content.sections]
+    .filter((section) => section.visible)
+    .sort((a, b) => a.order - b.order);
+  const renderSection = (id: (typeof orderedSections)[number]["id"]) => {
+    switch (id) {
+      case "hero": return <Hero content={content} />;
+      case "couple": return <CoupleSection content={content} />;
+      case "story": return <StorySection content={content} />;
+      case "event": return <EventSection content={content} />;
+      case "gallery": return <GallerySection content={content} />;
+      case "gift": return <GiftSection content={content} />;
+      case "rsvp": return <RsvpSection guestName={guest.name} content={content} />;
+      case "footer": return <Footer content={content} />;
+    }
+  };
   return (
     <div className="invitation-desktop-shell">
       <aside className="invitation-photo-panel relative" aria-hidden="true">
@@ -48,13 +64,7 @@ export function WeddingInvitation({ guest, content = defaultWeddingContent }: { 
         <QrPrelude guest={guest} open={qrOpen} onContinue={continueToInvitation} />
         <Cover open={coverOpen} onOpen={openInvitation} guestName={guest.name} content={content} />
         <div aria-hidden="true">{petals.map((left, index) => <span key={left} className="petal" style={{ left: `${left}%`, animationDuration: `${10 + index * 1.35}s`, animationDelay: `${-index * 1.7}s` }} />)}</div>
-        <Hero content={content} />
-        <CoupleSection content={content} />
-        <EventSection content={content} />
-        <GallerySection content={content} />
-        <GiftSection content={content} />
-        <RsvpSection guestName={guest.name} />
-        <Footer content={content} />
+        {orderedSections.map((section) => <div key={section.id}>{renderSection(section.id)}</div>)}
         <FloatingControls playing={playing} onMusic={toggle} />
       </main>
     </div>

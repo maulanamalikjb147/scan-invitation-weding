@@ -1,19 +1,21 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import { useForm } from "react-hook-form";
+import { useForm, useWatch } from "react-hook-form";
 import { Check, Heart, LoaderCircle, UsersRound } from "lucide-react";
 import { listRsvps, submitRsvp, type Rsvp, type RsvpInput } from "@/lib/rsvp-client";
 import { Reveal } from "./Reveal";
 import { SectionBackdrop } from "./SectionBackdrop";
+import { defaultWeddingContent, getWeddingSection, type WeddingContent } from "@/lib/wedding-content";
 
-export function RsvpSection({ guestName }: { guestName: string }) {
+export function RsvpSection({ guestName, content = defaultWeddingContent }: { guestName: string; content?: WeddingContent }) {
+  const section = getWeddingSection(content, "rsvp");
   const [wishes, setWishes] = useState<Rsvp[]>([]);
   const [sent, setSent] = useState(false);
   const [error, setError] = useState("");
-  const { register, handleSubmit, reset, setValue, watch, formState: { errors, isSubmitting } } = useForm<RsvpInput>({ defaultValues: { name: guestName, guests: 1, attendance: "hadir", message: "" } });
-  const attendance = watch("attendance");
-  const guests = Number(watch("guests")) || 1;
+  const { register, handleSubmit, reset, setValue, control, formState: { errors, isSubmitting } } = useForm<RsvpInput>({ defaultValues: { name: guestName, guests: 1, attendance: "hadir", message: "" } });
+  const attendance = useWatch({ control, name: "attendance" });
+  const guests = Number(useWatch({ control, name: "guests" })) || 1;
   const guestSelectionDisabled = attendance === "tidak";
 
   useEffect(() => {
@@ -24,9 +26,12 @@ export function RsvpSection({ guestName }: { guestName: string }) {
     try { setWishes(await listRsvps()); } catch { /* keep the invitation usable if the network is briefly unavailable */ }
   }, []);
   useEffect(() => {
-    void refresh();
+    const firstRefresh = window.setTimeout(() => { void refresh(); }, 0);
     const timer = setInterval(() => void refresh(), 6000);
-    return () => clearInterval(timer);
+    return () => {
+      window.clearTimeout(firstRefresh);
+      clearInterval(timer);
+    };
   }, [refresh]);
 
   const onSubmit = async (values: RsvpInput) => {
@@ -41,13 +46,14 @@ export function RsvpSection({ guestName }: { guestName: string }) {
   };
 
   return (
-    <section id="rsvp" className="section-rule relative overflow-hidden py-18 md:py-32">
-      <SectionBackdrop src="/images/gambar9.jpg" position="object-[50%_48%]" strength="opacity-[.58]" />
-      <div className="page-shell relative z-10 grid gap-8 lg:grid-cols-[.88fr_1.12fr] lg:gap-12">
+    <section id="rsvp" className="section-rule relative min-h-[100svh] overflow-hidden py-18 md:py-32">
+      <SectionBackdrop src={section.background} position="object-[50%_48%]" strength="opacity-100" />
+      <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(8,9,8,.88)_0%,rgba(8,9,8,.46)_42%,rgba(8,9,8,.95)_100%)]" />
+      <div className="page-shell relative z-10 grid min-h-[calc(100svh-9rem)] items-center gap-9 lg:grid-cols-[.88fr_1.12fr] lg:gap-12">
         <Reveal>
-          <h2 className="font-display text-3xl leading-[1.08] md:text-5xl">Wedding wish</h2>
-          <p className="mt-4 max-w-lg text-sm leading-7 text-[#d1c5b4] md:text-base">Berikan doa dan ucapan terbaik untuk kami.</p>
-          <form onSubmit={handleSubmit(onSubmit)} className="rsvp-panel mt-7 space-y-6 p-4 md:p-6">
+          <h2 className="font-display break-words leading-[1.02] text-white" style={{ fontSize: section.titleFontSize }}>{section.title}</h2>
+          <p className="mt-4 max-w-lg leading-[1.8] text-white/78" style={{ fontSize: section.bodyFontSize }}>{section.body}</p>
+          <form onSubmit={handleSubmit(onSubmit)} className="mt-8 space-y-6 border-y border-white/20 py-7">
             <input type="hidden" {...register("attendance")} />
             <input type="hidden" {...register("guests", { valueAsNumber: true })} />
             <div>
@@ -90,7 +96,7 @@ export function RsvpSection({ guestName }: { guestName: string }) {
             <button disabled={isSubmitting} className="font-label inline-flex min-h-12 w-full items-center justify-center gap-3 rounded-full bg-[#c5a059] px-6 text-xs font-semibold uppercase tracking-[.14em] text-[#131410] transition hover:bg-[#e9c176] disabled:opacity-50">{isSubmitting ? <LoaderCircle className="animate-spin" size={17} /> : <Heart size={17} />} Confirm</button>
           </form>
         </Reveal>
-        <Reveal delay={.1} className="rounded-[8px] border border-white/10 bg-[#1b1c18]/92 p-4 md:p-5">
+        <Reveal delay={.1} className="border-y border-white/20 py-5">
           <div className="max-h-[356px] overflow-y-auto pr-2">
             {wishes.length === 0 && <div className="py-16 text-center text-[#837c71]"><Heart className="mx-auto mb-4" size={28} /><p>Jadilah orang pertama yang meninggalkan ucapan.</p></div>}
             {wishes.map((wish) => <article key={wish.id} className="border-b border-white/[.06] py-3 last:border-0"><h4 className="font-display text-base">{wish.name}</h4><p className="mt-1 text-sm leading-6 text-[#d1c5b4]">{wish.message || "Semoga acaranya lancar dan penuh bahagia!"}</p></article>)}
