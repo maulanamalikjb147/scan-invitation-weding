@@ -1,12 +1,12 @@
 import Image from "next/image";
-import { wedding } from "@/lib/wedding-config";
+import { defaultWeddingContent, type WeddingContent, type WeddingPerson } from "@/lib/wedding-content";
 import { Reveal } from "./Reveal";
 import { SectionBackdrop } from "./SectionBackdrop";
 
 function PersonCard({
   person,
 }: {
-  person: typeof wedding.groom | typeof wedding.bride;
+  person: WeddingPerson;
 }) {
   return (
     <Reveal className="grid gap-6 md:grid-cols-[1fr_.78fr] md:items-end">
@@ -22,10 +22,10 @@ function PersonCard({
   );
 }
 
-export function CoupleSection() {
+export function CoupleSection({ content = defaultWeddingContent }: { content?: WeddingContent }) {
   return (
     <section id="couple" className="section-rule relative overflow-hidden py-18 md:py-36">
-      <SectionBackdrop src="/images/gambar6.jpg" position="object-[50%_44%]" strength="opacity-[.58]" />
+      <SectionBackdrop src={content.images.coupleBackdrop} position="object-[50%_44%]" strength="opacity-[.58]" />
       <div className="page-shell relative z-10">
         <Reveal className="mx-auto mb-14 max-w-3xl rounded-[8px] border border-white/10 bg-[#1b1c18]/88 p-5 text-center md:p-7">
           <p dir="rtl" lang="ar" className="font-display text-[1.35rem] leading-[2.05] text-[#e4e3db] md:text-3xl">وَمِنْ آيَاتِهِ أَنْ خَلَقَ لَكُمْ مِنْ أَنْفُسِكُمْ أَزْوَاجًا لِتَسْكُنُوا إِلَيْهَا وَجَعَلَ بَيْنَكُمْ مَوَدَّةً وَرَحْمَةً ۚ إِنَّ فِي ذَٰلِكَ لَآيَاتٍ لِقَوْمٍ يَتَفَكَّرُونَ</p>
@@ -37,7 +37,7 @@ export function CoupleSection() {
         <Reveal className="mx-auto mb-12 max-w-3xl text-center">
           <p className="font-display text-xl text-[#e9c176] md:text-2xl">Assalamualaikum Warahmatullahi Wabarakatuh</p>
         </Reveal>
-        <div className="grid gap-16 lg:grid-cols-2 lg:gap-10"><PersonCard person={wedding.bride} /><PersonCard person={wedding.groom} /></div>
+        <div className="grid gap-16 lg:grid-cols-2 lg:gap-10"><PersonCard person={content.bride} /><PersonCard person={content.groom} /></div>
       </div>
     </section>
   );

@@ -4,11 +4,12 @@ import Image from "next/image";
 import { AnimatePresence, motion } from "framer-motion";
 import { ChevronLeft, ChevronRight, X } from "lucide-react";
 import { useEffect, useState } from "react";
-import { gallery } from "@/lib/wedding-config";
+import { defaultWeddingContent, type WeddingContent } from "@/lib/wedding-content";
 import { Reveal } from "./Reveal";
 import { SectionBackdrop } from "./SectionBackdrop";
 
-export function GallerySection() {
+export function GallerySection({ content = defaultWeddingContent }: { content?: WeddingContent }) {
+  const gallery = content.gallery;
   const [active, setActive] = useState<number | null>(null);
   const change = (direction: number) => setActive((current) => current === null ? 0 : (current + direction + gallery.length) % gallery.length);
 
@@ -24,7 +25,7 @@ export function GallerySection() {
 
   return (
     <section id="gallery" className="section-rule relative overflow-hidden py-18 md:py-36">
-      <SectionBackdrop src="/images/gambar7.jpg" position="object-[50%_42%]" strength="opacity-[.50]" />
+      <SectionBackdrop src={content.images.galleryBackdrop} position="object-[50%_42%]" strength="opacity-[.50]" />
       <div className="page-shell relative z-10">
       <Reveal><h2 className="font-display text-3xl md:text-5xl">Our moments</h2></Reveal>
       <div className="mt-12 grid grid-cols-2 gap-2 md:grid-cols-4 md:gap-3">

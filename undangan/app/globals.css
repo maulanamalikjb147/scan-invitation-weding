@@ -144,8 +144,6 @@ button, a { -webkit-tap-highlight-color: transparent; }
 
   .invitation-photo-panel {
     display: block;
-    position: sticky;
-    top: 0;
     height: 100svh;
     overflow: hidden;
     background: #0a0a08;

@@ -3,23 +3,24 @@
 import Image from "next/image";
 import { AnimatePresence, motion } from "framer-motion";
 import { MailOpen } from "lucide-react";
-import { wedding } from "@/lib/wedding-config";
+import { defaultWeddingContent, type WeddingContent } from "@/lib/wedding-content";
 
-export function Cover({ open, onOpen, guestName }: { open: boolean; onOpen: () => void; guestName: string }) {
+export function Cover({ open, onOpen, guestName, content = defaultWeddingContent }: { open: boolean; onOpen: () => void; guestName: string; content?: WeddingContent }) {
+  const names = [content.bride.shortName, content.groom.shortName];
   return (
     <AnimatePresence>
       {open && (
         <motion.div className="invitation-panel-overlay fixed inset-0 z-50 bg-[#131410]" exit={{ opacity: 0 }} transition={{ duration: .85 }}>
           <motion.div className="noise relative h-full overflow-hidden" initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
-                <Image src="/images/gambar1.jpg" alt="Anisa dan Maulana" fill priority sizes="100vw" className="object-cover object-[50%_54%] md:object-[50%_48%]" />
+                <Image src={content.images.cover} alt={content.shortNames} fill priority sizes="100vw" className="object-cover object-[50%_54%] md:object-[50%_48%]" />
                 <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(19,20,16,.38),rgba(19,20,16,.08)_35%,rgba(19,20,16,.84))]" />
                 <div className="relative z-10 flex h-full flex-col items-center justify-between px-5 py-7 text-center md:py-12">
                   <div aria-hidden="true" />
                   <div className="mb-2">
                     <motion.h1 className="font-display text-[clamp(3.05rem,12vw,8rem)] leading-[.82]" initial={{ opacity: 0, y: 24 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: .9 }}>
-                      Anisa<br /><span className="text-[#c5a059]">&</span> Maulana
+                      {names[0]}<br /><span className="text-[#c5a059]">&</span> {names[1]}
                     </motion.h1>
-                    <p className="font-label mt-6 text-[10px] uppercase tracking-[.2em] text-[#d1c5b4] md:text-xs md:tracking-[.28em]">{wedding.dateLabel}</p>
+                    <p className="font-label mt-6 text-[10px] uppercase tracking-[.2em] text-[#d1c5b4] md:text-xs md:tracking-[.28em]">{content.dateLabel}</p>
                   </div>
                   <div>
                     <p className="text-sm italic text-white/70">Kepada Bapak/Ibu/Saudara/i</p>

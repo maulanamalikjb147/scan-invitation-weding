@@ -983,6 +983,26 @@ tbody td {
   color: #dc3545;
 }
 
+/* ===== Content CMS ===== */
+.admin-cms-layout {
+  display: grid;
+  grid-template-columns: minmax(180px, 230px) minmax(0, 1fr);
+  gap: var(--spacing-lg);
+  align-items: start;
+}
+
+.admin-cms-menu {
+  display: grid;
+  gap: 6px;
+  position: sticky;
+  top: 60px;
+  align-self: start;
+}
+
+.admin-cms-menu button {
+  width: 100%;
+}
+
 /* ===== Responsive ===== */
 @media (max-width: 1100px) {
   .bulk-monitor-grid {
@@ -1029,6 +1049,17 @@ tbody td {
 
   .admin-guest-table .qr-image {
     width: 48px;
+  }
+}
+
+@media (max-width: 900px) {
+  .admin-cms-layout {
+    grid-template-columns: 1fr;
+  }
+
+  .admin-cms-menu {
+    position: static;
+    grid-template-columns: repeat(auto-fit, minmax(126px, 1fr));
   }
 }
 

@@ -879,6 +879,21 @@ function Admin() {
         </h2>
         <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--spacing-sm)' }}>
           <Link
+            to="/admin/content"
+            className="btn-pearl-capsule"
+            style={{
+              fontSize: '12px',
+              padding: '6px 12px',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '6px',
+              textDecoration: 'none'
+            }}
+          >
+            <Icon name="grid" size={14} />
+            Konten
+          </Link>
+          <Link
             to="/admin/scan"
             className="btn-pearl-capsule"
             style={{

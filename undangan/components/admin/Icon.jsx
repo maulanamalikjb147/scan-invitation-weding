@@ -142,6 +142,15 @@ const Icon = ({ name, size = 24, color = 'currentColor', className = '', style =
         <rect x="14" y="14" width="7" height="7" />
       </svg>
     ),
+    // Calendar
+    calendar: (
+      <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className={className} style={style}>
+        <rect x="3" y="4" width="18" height="18" rx="2" />
+        <path d="M16 2v4" />
+        <path d="M8 2v4" />
+        <path d="M3 10h18" />
+      </svg>
+    ),
     // Eye (view)
     eye: (
       <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className={className} style={style}>

@@ -14,10 +14,11 @@ import { Hero } from "./Hero";
 import { QrPrelude } from "./QrPrelude";
 import { RsvpSection } from "./RsvpSection";
 import type { WeddingGuest } from "@/lib/guest";
+import { defaultWeddingContent, type WeddingContent } from "@/lib/wedding-content";
 
 const petals = [8, 19, 32, 47, 63, 76, 89];
 
-export function WeddingInvitation({ guest }: { guest: WeddingGuest }) {
+export function WeddingInvitation({ guest, content = defaultWeddingContent }: { guest: WeddingGuest; content?: WeddingContent }) {
   const [qrOpen, setQrOpen] = useState(false);
   const [coverOpen, setCoverOpen] = useState(true);
   const { playing, start, toggle } = useAmbientMusic();
@@ -32,9 +33,9 @@ export function WeddingInvitation({ guest }: { guest: WeddingGuest }) {
   };
   return (
     <div className="invitation-desktop-shell">
-      <aside className="invitation-photo-panel" aria-hidden="true">
+      <aside className="invitation-photo-panel relative" aria-hidden="true">
         <Image
-          src="/images/gambar1.jpg"
+          src={content.images.desktopSide || content.images.cover}
           alt=""
           fill
           priority
@@ -45,15 +46,15 @@ export function WeddingInvitation({ guest }: { guest: WeddingGuest }) {
       </aside>
       <main className="invitation-phone-panel">
         <QrPrelude guest={guest} open={qrOpen} onContinue={continueToInvitation} />
-        <Cover open={coverOpen} onOpen={openInvitation} guestName={guest.name} />
+        <Cover open={coverOpen} onOpen={openInvitation} guestName={guest.name} content={content} />
         <div aria-hidden="true">{petals.map((left, index) => <span key={left} className="petal" style={{ left: `${left}%`, animationDuration: `${10 + index * 1.35}s`, animationDelay: `${-index * 1.7}s` }} />)}</div>
-        <Hero />
-        <CoupleSection />
-        <EventSection />
-        <GallerySection />
-        <GiftSection />
+        <Hero content={content} />
+        <CoupleSection content={content} />
+        <EventSection content={content} />
+        <GallerySection content={content} />
+        <GiftSection content={content} />
         <RsvpSection guestName={guest.name} />
-        <Footer />
+        <Footer content={content} />
         <FloatingControls playing={playing} onMusic={toggle} />
       </main>
     </div>
